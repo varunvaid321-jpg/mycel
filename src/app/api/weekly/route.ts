@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   // Get entries from last 7 days
   const weekAgo = new Date();
