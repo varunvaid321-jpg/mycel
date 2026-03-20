@@ -1,22 +1,29 @@
 const { execSync } = require("child_process");
-const path = require("path");
+const { createServer } = require("http");
+const { parse } = require("url");
+const next = require("next");
 
-const PORT = process.env.PORT || 10000;
+const PORT = parseInt(process.env.PORT || "10000", 10);
+const app = next({ dev: false });
+const handle = app.getRequestHandler();
 
-// Ensure DB exists
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
+// Ensure DB schema exists
 try {
+  console.log("Running prisma db push...");
   execSync("npx prisma db push --accept-data-loss --skip-generate", {
     stdio: "inherit",
-    env: process.env,
+    cwd: __dirname,
   });
   console.log("DB ready");
 } catch (e) {
-  console.error("prisma db push failed:", e.message);
-  // Continue anyway — DB might already exist
+  console.error("prisma db push warning:", e.message);
 }
 
-// Start Next.js
-const cli = require("next/dist/cli/next-start");
-process.argv = ["node", "next", "-p", String(PORT)];
-cli.nextStart();
+app.prepare().then(() => {
+  createServer((req, res) => {
+    const parsedUrl = parse(req.url, true);
+    handle(req, res, parsedUrl);
+  }).listen(PORT, "0.0.0.0", () => {
+    console.log(`Mycel running on port ${PORT}`);
+  });
+});
