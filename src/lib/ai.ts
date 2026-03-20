@@ -107,6 +107,60 @@ Text: ${rawText}`,
   }
 }
 
+export interface VideoAnalysis {
+  title: string;
+  summary: string;
+  keyTakeaways: string[];
+  actionItems: string[];
+  relevantTopics: string[];
+}
+
+export async function analyzeVideoTranscript(
+  transcript: string,
+  videoTitle: string,
+  userNote?: string
+): Promise<VideoAnalysis | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const client = new Anthropic({ apiKey });
+
+    // Truncate transcript to ~12k chars to stay within limits
+    const trimmed = transcript.slice(0, 12000);
+
+    const message = await client.messages.create({
+      model: "claude-sonnet-4-5-20250514",
+      max_tokens: 1500,
+      messages: [
+        {
+          role: "user",
+          content: `Analyze this YouTube video transcript and extract what's personally useful and actionable.${userNote ? `\n\nThe user's intent: "${userNote}"` : ""}
+
+Video title: ${videoTitle}
+
+Transcript:
+${trimmed}
+
+${userNote ? `Focus your analysis through the lens of the user's intent: "${userNote}". Tailor takeaways and actions to serve that purpose.\n\n` : ""}Return a JSON object with exactly these keys:
+- "summary": 2-3 sentence summary of the core message
+- "keyTakeaways": array of 3-5 strings — the most valuable insights
+- "actionItems": array of 1-3 strings — concrete things I could do based on this
+- "relevantTopics": array of 1-4 strings from this list ONLY: health, money, retirement, housing, family, career, relationships, growth, creativity, travel
+
+Be direct and practical. Focus on what's actionable, not just interesting. Return ONLY valid JSON, no markdown.`,
+        },
+      ],
+    });
+
+    const text =
+      message.content[0].type === "text" ? message.content[0].text : "";
+    return { title: videoTitle, ...JSON.parse(text) } as VideoAnalysis;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMonthlyReview(
   entries: Entry[]
 ): Promise<AIMonthlyReview | null> {
