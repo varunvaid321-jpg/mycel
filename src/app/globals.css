@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
+
+html { background: #0a0a08; }
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(196, 154, 108, 0.3);
+  color: #e8e4d8;
+}
+
+textarea::-webkit-scrollbar { width: 4px; }
+textarea::-webkit-scrollbar-track { background: transparent; }
+textarea::-webkit-scrollbar-thumb { background: #2a2a20; border-radius: 2px; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+
+@keyframes saved-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.animate-saved { animation: saved-flash 1.5s ease-out forwards; }
