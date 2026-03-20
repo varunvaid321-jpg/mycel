@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import DailyNudge from "@/components/daily-nudge";
 import Compose from "@/components/compose";
+import WeeklySummary from "@/components/weekly-summary";
+import MonthlyReview from "@/components/monthly-review";
+import Momentum from "@/components/momentum";
 import Filters from "@/components/filters";
 import EntryFeed from "@/components/entry-feed";
-import WeeklySummary from "@/components/weekly-summary";
+import Decisions from "@/components/decisions";
 
 export default function Home() {
   const [category, setCategory] = useState("all");
   const [topic, setTopic] = useState("all");
   const [search, setSearch] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showDecisions, setShowDecisions] = useState(false);
 
   const handleSaved = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -40,29 +45,69 @@ export default function Home() {
           </div>
         </header>
 
+        {/* Daily Nudge */}
+        <DailyNudge />
+
         {/* Compose */}
         <Compose onSaved={handleSaved} />
 
         {/* Weekly Summary */}
         <WeeklySummary key={refreshKey} />
 
-        {/* Filters + Search */}
-        <Filters
-          activeCategory={category}
-          onCategoryChange={setCategory}
-          activeTopic={topic}
-          onTopicChange={setTopic}
-          search={search}
-          onSearchChange={setSearch}
-        />
+        {/* Monthly Review */}
+        <MonthlyReview />
 
-        {/* Feed */}
-        <EntryFeed
-          category={category}
-          topic={topic}
-          search={search}
-          refreshKey={refreshKey}
-        />
+        {/* Momentum Heatmap */}
+        <Momentum />
+
+        {/* Filters + Search + Decisions toggle */}
+        <div className="mb-5 pb-4 border-b border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setShowDecisions(false)}
+              className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all ${
+                !showDecisions
+                  ? "border-text-muted text-text-primary bg-surface-hover"
+                  : "border-border text-text-faint hover:text-text-muted"
+              }`}
+            >
+              feed
+            </button>
+            <button
+              onClick={() => setShowDecisions(true)}
+              className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all ${
+                showDecisions
+                  ? "border-fruit/50 text-fruit bg-fruit/10"
+                  : "border-border text-text-faint hover:text-text-muted"
+              }`}
+            >
+              decisions
+            </button>
+          </div>
+
+          {!showDecisions && (
+            <Filters
+              activeCategory={category}
+              onCategoryChange={setCategory}
+              activeTopic={topic}
+              onTopicChange={setTopic}
+              search={search}
+              onSearchChange={setSearch}
+            />
+          )}
+        </div>
+
+        {/* Content */}
+        {showDecisions ? (
+          <Decisions visible={showDecisions} />
+        ) : (
+          <EntryFeed
+            category={category}
+            topic={topic}
+            search={search}
+            refreshKey={refreshKey}
+          />
+        )}
 
         {/* Footer */}
         <footer className="mt-16 pb-8 text-center">
