@@ -49,6 +49,47 @@ export async function POST(request: Request) {
   // Auto-classify
   const { category, topics } = classify(content.trim());
 
+  // Auto-link: if fruit, find related recent spores/signals by keyword overlap
+  let linkedEntryIds = "";
+  if (category === "fruit") {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 14);
+    const recent = await prisma.entry.findMany({
+      where: {
+        category: { in: ["spore", "signal"] },
+        createdAt: { gte: weekAgo },
+        archived: false,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    const contentWords = new Set(
+      content
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, "")
+        .split(/\s+/)
+        .filter((w: string) => w.length > 4)
+    );
+
+    const linked = recent.filter((r) => {
+      const rWords = r.content
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, "")
+        .split(/\s+/)
+        .filter((w: string) => w.length > 4);
+      const overlap = rWords.filter((w: string) => contentWords.has(w));
+      return overlap.length >= 2;
+    });
+
+    if (linked.length > 0) {
+      linkedEntryIds = linked
+        .slice(0, 5)
+        .map((l) => l.id)
+        .join(",");
+    }
+  }
+
   const entry = await prisma.entry.create({
     data: {
       content: content.trim(),
@@ -56,6 +97,7 @@ export async function POST(request: Request) {
       tags: topics.join(","),
       localDate,
       localTime,
+      linkedEntryIds,
     },
   });
 

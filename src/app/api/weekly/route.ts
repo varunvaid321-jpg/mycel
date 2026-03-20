@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
+import { generateWeeklyBrief } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // Get entries from last 7 days
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
 
@@ -23,25 +23,25 @@ export async function GET() {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
 
-  // Find signals (reminders)
+  // Try AI brief
+  const aiBrief = await generateWeeklyBrief(entries);
+
+  // Fallback rule-based data
   const reminders = entries
     .filter((e) => e.category === "signal")
     .slice(0, 5)
     .map((e) => e.content.slice(0, 120));
 
-  // Find fruits (actions)
   const actions = entries
     .filter((e) => e.category === "fruit")
     .slice(0, 5)
     .map((e) => e.content.slice(0, 120));
 
-  // Find decompose items
   const letting_go = entries
     .filter((e) => e.category === "decompose")
     .slice(0, 3)
     .map((e) => e.content.slice(0, 120));
 
-  // Simple word frequency for themes (exclude common words)
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
     "have", "has", "had", "do", "does", "did", "will", "would", "could",
@@ -73,7 +73,6 @@ export async function GET() {
     .slice(0, 6)
     .map(([word, count]) => ({ word, count }));
 
-  // Most active category
   const topCategory = Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0];
 
   return NextResponse.json({
@@ -90,5 +89,6 @@ export async function GET() {
           count: topCategory[1],
         }
       : null,
+    aiBrief,
   });
 }

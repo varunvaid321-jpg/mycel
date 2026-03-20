@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+interface AIBrief {
+  patterns: string[];
+  ripeDecisions: string[];
+  conversationsToHave: string[];
+  thingsToLetGo: string[];
+  prioritizedActions: string[];
+}
+
 interface WeeklyData {
   totalEntries: number;
   breakdown: Record<string, number>;
@@ -10,19 +18,27 @@ interface WeeklyData {
   actions: string[];
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
+  aiBrief: AIBrief | null;
 }
 
 export default function WeeklySummary() {
   const [data, setData] = useState<WeeklyData | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/weekly")
       .then((r) => r.json())
-      .then(setData);
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  if (!data || data.totalEntries === 0) return null;
+  if (loading || !data || data.totalEntries === 0) return null;
+
+  const ai = data.aiBrief;
 
   return (
     <div className="bg-surface border border-border border-l-[3px] border-l-network rounded-lg p-5 md:p-6 mb-8 animate-fade-in">
@@ -52,82 +68,138 @@ export default function WeeklySummary() {
 
       {!collapsed && (
         <div className="space-y-4">
-          {/* Themes */}
-          {data.themes.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
-                Themes This Week
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.themes.map((t) => (
-                  <span
-                    key={t.word}
-                    className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-[0.65rem]"
-                  >
-                    {t.word}
-                    <span className="ml-1 text-text-faint">{t.count}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {ai ? (
+            <>
+              {/* AI Patterns */}
+              {ai.patterns.length > 0 && (
+                <Section title="Patterns">
+                  {ai.patterns.map((p, i) => (
+                    <BulletItem key={i} icon="~" color="text-network" text={p} />
+                  ))}
+                </Section>
+              )}
 
-          {/* Reminders */}
-          {data.reminders.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
-                Active Signals
-              </h3>
-              <ul className="space-y-1">
-                {data.reminders.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <span className="text-signal font-mono text-xs mt-0.5 shrink-0">&rarr;</span>
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+              {/* Ripe Decisions */}
+              {ai.ripeDecisions.length > 0 && (
+                <Section title="Decisions Ripening">
+                  {ai.ripeDecisions.map((d, i) => (
+                    <BulletItem key={i} icon="&#x25cf;" color="text-fruit" text={d} />
+                  ))}
+                </Section>
+              )}
 
-          {/* Actions */}
-          {data.actions.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
-                Actions Taken
-              </h3>
-              <ul className="space-y-1">
-                {data.actions.map((a, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <span className="text-fruit font-mono text-xs mt-0.5 shrink-0">&check;</span>
-                    {a}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+              {/* Conversations */}
+              {ai.conversationsToHave.length > 0 && (
+                <Section title="Conversations to Have">
+                  {ai.conversationsToHave.map((c, i) => (
+                    <BulletItem key={i} icon="&rarr;" color="text-signal" text={c} />
+                  ))}
+                </Section>
+              )}
 
-          {/* Letting go */}
-          {data.letting_go.length > 0 && (
-            <div>
-              <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
-                Decomposing
-              </h3>
-              <ul className="space-y-1">
-                {data.letting_go.map((l, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-text-muted">
-                    <span className="text-decompose font-mono text-xs mt-0.5 shrink-0">~</span>
-                    {l}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+              {/* Let Go */}
+              {ai.thingsToLetGo.length > 0 && (
+                <Section title="Consider Letting Go">
+                  {ai.thingsToLetGo.map((l, i) => (
+                    <BulletItem key={i} icon="&times;" color="text-decompose" text={l} />
+                  ))}
+                </Section>
+              )}
 
-          <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
-            v1 rule-based summary &middot; AI summarizer slot ready for v2
-          </p>
+              {/* Actions */}
+              {ai.prioritizedActions.length > 0 && (
+                <Section title="This Week&apos;s Actions">
+                  {ai.prioritizedActions.map((a, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                      <span className="text-accent font-mono text-xs mt-0.5 shrink-0">
+                        {i + 1}.
+                      </span>
+                      <span>{a}</span>
+                    </li>
+                  ))}
+                </Section>
+              )}
+
+              <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
+                ai-powered weekly brief
+              </p>
+            </>
+          ) : (
+            <>
+              {/* Fallback: rule-based */}
+              {data.themes.length > 0 && (
+                <div>
+                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                    Themes This Week
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {data.themes.map((t) => (
+                      <span
+                        key={t.word}
+                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-[0.65rem]"
+                      >
+                        {t.word}
+                        <span className="ml-1 text-text-faint">{t.count}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.reminders.length > 0 && (
+                <Section title="Active Signals">
+                  {data.reminders.map((r, i) => (
+                    <BulletItem key={i} icon="&rarr;" color="text-signal" text={r} />
+                  ))}
+                </Section>
+              )}
+
+              {data.actions.length > 0 && (
+                <Section title="Actions Taken">
+                  {data.actions.map((a, i) => (
+                    <BulletItem key={i} icon="&check;" color="text-fruit" text={a} />
+                  ))}
+                </Section>
+              )}
+
+              {data.letting_go.length > 0 && (
+                <Section title="Decomposing">
+                  {data.letting_go.map((l, i) => (
+                    <BulletItem key={i} icon="~" color="text-decompose" text={l} />
+                  ))}
+                </Section>
+              )}
+
+              <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
+                rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+        {title}
+      </h3>
+      <ul className="space-y-1">{children}</ul>
+    </div>
+  );
+}
+
+function BulletItem({ icon, color, text }: { icon: string; color: string; text: string }) {
+  return (
+    <li className="flex items-start gap-2 text-sm leading-relaxed">
+      <span
+        className={`${color} font-mono text-xs mt-0.5 shrink-0`}
+        dangerouslySetInnerHTML={{ __html: icon }}
+      />
+      <span>{text}</span>
+    </li>
   );
 }

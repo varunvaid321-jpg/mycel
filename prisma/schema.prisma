@@ -17,5 +17,6 @@ model Entry {
   updatedAt DateTime @updatedAt
   isPublic  Boolean  @default(false)
   archived  Boolean  @default(false)
-  tags      String   @default("")
+  tags           String   @default("")
+  linkedEntryIds String   @default("")
 }
