@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { classify } from "@/lib/classifier";
+import { autoCorrect } from "@/lib/ai";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -46,8 +47,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "content required" }, { status: 400 });
   }
 
-  // Auto-classify
-  const { category, topics } = classify(content.trim());
+  // Auto-correct typos and bad grammar
+  const corrected = await autoCorrect(content.trim());
+
+  // Auto-classify (on corrected text for better accuracy)
+  const { category, topics } = classify(corrected);
 
   // Auto-link: if fruit, find related recent spores/signals by keyword overlap
   let linkedEntryIds = "";
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
     });
 
     const contentWords = new Set(
-      content
+      corrected
         .toLowerCase()
         .replace(/[^a-z\s]/g, "")
         .split(/\s+/)
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
 
   const entry = await prisma.entry.create({
     data: {
-      content: content.trim(),
+      content: corrected,
       category,
       tags: topics.join(","),
       localDate,
