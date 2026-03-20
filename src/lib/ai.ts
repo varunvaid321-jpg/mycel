@@ -76,6 +76,37 @@ Be concise, direct, and insightful. Each string should be 1-2 sentences max. Ret
   }
 }
 
+export async function autoCorrect(rawText: string): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return rawText;
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const message = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: `Fix all spelling, grammar, and typo errors in this text. Keep the original meaning, tone, and style exactly the same. Do not add punctuation that wasn't intended. Do not make it more formal. Do not add or remove ideas. Just clean up the language so it reads clearly.
+
+If the text is already clean, return it unchanged.
+
+Return ONLY the corrected text, nothing else.
+
+Text: ${rawText}`,
+        },
+      ],
+    });
+
+    const corrected =
+      message.content[0].type === "text" ? message.content[0].text.trim() : rawText;
+    return corrected || rawText;
+  } catch {
+    return rawText;
+  }
+}
+
 export async function generateMonthlyReview(
   entries: Entry[]
 ): Promise<AIMonthlyReview | null> {
