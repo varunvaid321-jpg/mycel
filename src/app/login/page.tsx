@@ -119,11 +119,11 @@ export default function LoginPage() {
       </div>
 
       <div className="text-center z-10 px-6 w-full max-w-[400px]">
-        <div className="text-6xl mb-6 opacity-60">&#x1F344;</div>
-        <h1 className="text-5xl md:text-6xl font-normal tracking-[0.12em] lowercase text-accent mb-2">
+        <div className={`${locked ? "text-4xl mb-3" : "text-6xl mb-6"} opacity-60`}>&#x1F344;</div>
+        <h1 className={`${locked ? "text-3xl" : "text-5xl md:text-6xl"} font-normal tracking-[0.12em] lowercase text-accent mb-2`}>
           mycel
         </h1>
-        <p className={`${TEXT_TAGLINE} text-base tracking-wide mb-12`}>
+        <p className={`${TEXT_TAGLINE} text-base tracking-wide ${locked ? "mb-6" : "mb-12"}`}>
           Ideas spread quietly.
         </p>
 
@@ -233,12 +233,12 @@ export default function LoginPage() {
 
         {remaining != null && remaining > 0 && remaining < MAX_DISPLAY && (
           <p className={`mt-1 ${TEXT_META}`}>
-            {remaining} attempts remaining
+            {remaining} attempt{remaining !== 1 ? "s" : ""} remaining
           </p>
         )}
       </div>
 
-      <div className={`absolute bottom-8 ${TEXT_FOOTER}`}>
+      <div className={`mt-auto pb-8 pt-12 ${TEXT_FOOTER}`}>
         no names &middot; no traces &middot; just growth
       </div>
     </div>

@@ -11,6 +11,7 @@ import Filters from "@/components/filters";
 import EntryFeed from "@/components/entry-feed";
 import Decisions from "@/components/decisions";
 import BackupAlert from "@/components/backup-alert";
+import ScreenLock from "@/components/screen-lock";
 import {
   PAGE_CONTAINER,
   TEXT_TAGLINE,
@@ -43,6 +44,7 @@ export default function Home() {
   }, []);
 
   return (
+    <ScreenLock>
     <div className="min-h-screen">
       <div className={PAGE_CONTAINER}>
         {/* Header */}
@@ -154,5 +156,6 @@ export default function Home() {
         </footer>
       </div>
     </div>
+    </ScreenLock>
   );
 }
