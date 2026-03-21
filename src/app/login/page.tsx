@@ -104,10 +104,10 @@ export default function LoginPage() {
             <div className="space-y-4">
               <div className="bg-signal/10 border border-signal/30 rounded-lg px-4 py-3">
                 <p className="font-mono text-[0.65rem] text-signal tracking-wider uppercase mb-1">
-                  unusual location
+                  security check
                 </p>
                 <p className="text-sm text-text-muted">
-                  {challenge.location}
+                  Login detected from outside your usual area.
                 </p>
               </div>
 
