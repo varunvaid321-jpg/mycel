@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CATEGORIES, type Category } from "@/lib/categories";
 import { TOPICS, type Topic } from "@/lib/classifier";
 
@@ -15,7 +16,7 @@ interface Entry {
 
 interface EntryCardProps {
   entry: Entry;
-  onArchive: (id: string) => void;
+  onDelete: (id: string) => void;
   searchTerm?: string;
 }
 
@@ -48,7 +49,8 @@ function HighlightedText({ text, term }: { text: string; term?: string }) {
   );
 }
 
-export default function EntryCard({ entry, onArchive, searchTerm }: EntryCardProps) {
+export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProps) {
+  const [confirming, setConfirming] = useState(false);
   const cat = CATEGORIES[entry.category as Category];
   const topics = entry.tags
     ? entry.tags.split(",").filter(Boolean) as Topic[]
@@ -80,14 +82,40 @@ export default function EntryCard({ entry, onArchive, searchTerm }: EntryCardPro
           </span>
         </div>
 
-        <button
-          onClick={() => onArchive(entry.id)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity font-mono text-[0.6rem]
-            text-text-faint hover:text-signal tracking-wider shrink-0 ml-2"
-          title="Archive"
-        >
-          &times;
-        </button>
+        {confirming ? (
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            <button
+              onClick={() => {
+                onDelete(entry.id);
+                setConfirming(false);
+              }}
+              className="px-2.5 py-1 rounded bg-signal/20 border border-signal/40 text-signal
+                font-mono text-[0.65rem] tracking-wider transition-all hover:bg-signal/30"
+            >
+              delete
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              className="px-2.5 py-1 rounded border border-border text-text-faint
+                font-mono text-[0.65rem] tracking-wider transition-all hover:text-text-muted"
+            >
+              keep
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirming(true)}
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ml-2
+              border border-border text-text-faint hover:border-signal/40 hover:text-signal
+              transition-all"
+            title="Delete"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="text-[1.05rem] leading-[1.75] whitespace-pre-wrap">

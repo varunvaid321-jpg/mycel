@@ -43,12 +43,8 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
     fetchEntries();
   }, [fetchEntries, refreshKey]);
 
-  async function handleArchive(id: string) {
-    await fetch(`/api/entries/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archived: true }),
-    });
+  async function handleDelete(id: string) {
+    await fetch(`/api/entries/${id}`, { method: "DELETE" });
     fetchEntries();
   }
 
@@ -76,7 +72,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
   return (
     <div className="space-y-3">
       {entries.map((entry) => (
-        <EntryCard key={entry.id} entry={entry} onArchive={handleArchive} searchTerm={search} />
+        <EntryCard key={entry.id} entry={entry} onDelete={handleDelete} searchTerm={search} />
       ))}
       {entries.length < total && (
         <p className="text-center font-mono text-[0.65rem] text-text-faint tracking-wider pt-4">
