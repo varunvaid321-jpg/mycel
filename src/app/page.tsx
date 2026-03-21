@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import DailyNudge from "@/components/daily-nudge";
 import Compose from "@/components/compose";
 import WeeklySummary from "@/components/weekly-summary";
@@ -16,6 +17,12 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [showDecisions, setShowDecisions] = useState(false);
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/login");
+  }
 
   const handleSaved = useCallback(() => {
     setRefreshKey((k) => k + 1);
@@ -35,13 +42,22 @@ export default function Home() {
                 Ideas spread quietly.
               </p>
             </div>
-            <span className="font-mono text-[0.65rem] text-text-faint tracking-wide">
-              {new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[0.65rem] text-text-faint tracking-wide">
+                {new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="font-mono text-[0.6rem] text-text-faint hover:text-signal
+                  tracking-wider transition-colors"
+              >
+                log out
+              </button>
+            </div>
           </div>
         </header>
 
