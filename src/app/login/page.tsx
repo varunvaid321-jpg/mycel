@@ -47,7 +47,7 @@ export default function LoginPage() {
           Ideas spread quietly.
         </p>
 
-        <form onSubmit={handleSubmit} className="max-w-[360px] mx-auto">
+        <form onSubmit={handleSubmit} className="w-full max-w-[360px] mx-auto">
           <div className="flex">
             <input
               type="password"
@@ -55,16 +55,16 @@ export default function LoginPage() {
               onChange={(e) => setPassphrase(e.target.value)}
               placeholder="enter passphrase"
               autoFocus
-              className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3
-                font-mono text-sm text-text-primary tracking-wider placeholder:text-text-faint
+              className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
+                font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
                 outline-none transition-colors focus:border-accent
                 ${error ? "border-signal" : ""}`}
             />
             <button
               type="submit"
               disabled={loading}
-              className="bg-accent border border-accent rounded-r px-5 py-3 text-bg font-mono
-                text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
+              className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
+                text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
                 disabled:opacity-50"
             >
               {loading ? "..." : "enter"}

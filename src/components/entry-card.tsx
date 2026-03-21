@@ -57,7 +57,7 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
     : [];
 
   return (
-    <div className="group bg-surface border border-border rounded-lg p-5 transition-colors hover:border-border/80 animate-fade-in">
+    <div className="group bg-surface border border-border rounded-lg p-4 sm:p-5 transition-colors hover:border-border/80 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -89,15 +89,15 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
                 onDelete(entry.id);
                 setConfirming(false);
               }}
-              className="px-2.5 py-1 rounded bg-signal/20 border border-signal/40 text-signal
-                font-mono text-[0.65rem] tracking-wider transition-all hover:bg-signal/30"
+              className="px-3 py-2 min-h-[44px] rounded bg-signal/20 border border-signal/40 text-signal
+                font-mono text-[0.65rem] tracking-wider transition-all hover:bg-signal/30 flex items-center"
             >
               delete
             </button>
             <button
               onClick={() => setConfirming(false)}
-              className="px-2.5 py-1 rounded border border-border text-text-faint
-                font-mono text-[0.65rem] tracking-wider transition-all hover:text-text-muted"
+              className="px-3 py-2 min-h-[44px] rounded border border-border text-text-faint
+                font-mono text-[0.65rem] tracking-wider transition-all hover:text-text-muted flex items-center"
             >
               keep
             </button>
@@ -105,7 +105,7 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
         ) : (
           <button
             onClick={() => setConfirming(true)}
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ml-2
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center shrink-0 ml-2
               border border-border text-text-faint hover:border-signal/40 hover:text-signal
               transition-all"
             title="Delete"

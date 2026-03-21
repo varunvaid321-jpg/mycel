@@ -42,18 +42,24 @@ export default function Home() {
                 Ideas spread quietly.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[0.65rem] text-text-faint tracking-wide">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="font-mono text-[0.6rem] sm:text-[0.65rem] text-text-faint tracking-wide hidden sm:inline">
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
                 })}
               </span>
+              <span className="font-mono text-[0.6rem] text-text-faint tracking-wide sm:hidden">
+                {new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
               <button
                 onClick={handleLogout}
                 className="font-mono text-[0.6rem] text-text-faint hover:text-signal
-                  tracking-wider transition-colors"
+                  tracking-wider transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 log out
               </button>
@@ -81,7 +87,7 @@ export default function Home() {
           <div className="flex items-center gap-2 mb-3">
             <button
               onClick={() => setShowDecisions(false)}
-              className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all ${
+              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all flex items-center ${
                 !showDecisions
                   ? "border-text-muted text-text-primary bg-surface-hover"
                   : "border-border text-text-faint hover:text-text-muted"
@@ -91,7 +97,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setShowDecisions(true)}
-              className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all ${
+              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all flex items-center ${
                 showDecisions
                   ? "border-fruit/50 text-fruit bg-fruit/10"
                   : "border-border text-text-faint hover:text-text-muted"

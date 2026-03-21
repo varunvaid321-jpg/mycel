@@ -91,7 +91,7 @@ export default function MicButton({ onTranscript, onInterim, onListeningChange }
     <button
       type="button"
       onClick={toggle}
-      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all
+      className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all
         ${
           listening
             ? "bg-signal/20 text-signal border border-signal/40 animate-pulse"
