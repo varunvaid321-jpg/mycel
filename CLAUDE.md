@@ -30,14 +30,19 @@ Private AI-powered personal journal at amushroom.com. Captures thoughts via typi
    - Mobile responsiveness (touch targets ≥44px, no overflow)
    - Dark theme compliance (all text bright and readable)
    - `force-dynamic` on all non-static API routes
-5. **End-to-end test**: After build passes, run targeted tests against the changed features:
-   - API routes: `curl` test each changed endpoint with expected inputs + edge cases
-   - UI components: verify render (start dev server, hit the page, check response)
-   - AI features: verify with and without API key (fallback works)
-   - Record results in PR description
+5. **End-to-end test (MANDATORY — no exceptions)**:
+   After build passes, you MUST actually execute tests against changed features. Code inspection alone does NOT count.
+   - API routes: `curl` test each changed endpoint with expected inputs + edge cases. Run the dev server (`DATABASE_URL="file:./dev.db" npx next dev`) and hit real endpoints.
+   - UI components: start dev server, open the page in browser or curl the HTML, verify render.
+   - AI features: test with API key set AND with it unset (verify fallback works).
+   - Paste actual command output into the PR description — not "confirmed in code".
+   - **If you cannot run E2E tests** (e.g. no local DB, missing env vars, test would hit production), you MUST:
+     1. State clearly in the PR description: "E2E NOT RUN — [reason]"
+     2. Alert the user before merging: "I could not run E2E tests because [reason]. Proceed?"
+     3. Never fake results or mark "PASS" based on code reading alone.
 6. **PR description must include**:
    - Summary of changes
-   - E2E test results table (endpoint/action → expected → actual → pass/fail)
+   - E2E test results table (endpoint/action → expected → actual → pass/fail) with REAL outputs
    - Any known limitations
 7. **Push + PR**: `git push origin branch` → `gh pr create` → `gh pr merge N --squash`
 8. **Verify deploy**: After merge, confirm GitHub Action triggers Render deploy
