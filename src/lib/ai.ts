@@ -158,6 +158,49 @@ Be direct and practical. Focus on what's actionable, not just interesting. Retur
 
 // ── Monthly Review ───────────────────────────────────────────
 
+export interface WebAnalysis {
+  title: string;
+  summary: string;
+  keyTakeaways: string[];
+  actionItems: string[];
+  relevantTopics: string[];
+}
+
+export async function analyzeWebContent(
+  text: string,
+  title: string,
+  siteName: string,
+  userNote?: string
+): Promise<WebAnalysis | null> {
+  const trimmed = text.slice(0, 12000);
+
+  const result = await ask(
+    `Analyze this web page content and extract what's personally useful and actionable.${userNote ? `\n\nThe user's intent: "${userNote}"` : ""}
+
+Page title: ${title}
+Source: ${siteName}
+
+Content:
+${trimmed}
+
+${userNote ? `Focus your analysis through the lens of the user's intent: "${userNote}". Tailor takeaways and actions to serve that purpose.\n\n` : ""}Return a JSON object with exactly these keys:
+- "summary": 2-3 sentence summary of the core message
+- "keyTakeaways": array of 3-5 strings — the most valuable insights
+- "actionItems": array of 1-3 strings — concrete things I could do based on this
+- "relevantTopics": array of 1-4 strings from this list ONLY: health, money, retirement, housing, family, career, relationships, growth, creativity, travel
+
+Be direct and practical. Focus on what's actionable, not just interesting. Return ONLY valid JSON, no markdown.`
+  );
+
+  if (!result) return null;
+
+  try {
+    return { title, ...JSON.parse(extractJSON(result)) } as WebAnalysis;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMonthlyReview(
   entries: Entry[]
 ): Promise<AIMonthlyReview | null> {

@@ -12,21 +12,33 @@ export function isYouTubeUrl(text: string): boolean {
   return YT_URL_REGEX.test(text.trim());
 }
 
-export async function getTranscript(videoId: string): Promise<string> {
-  const segments = await YoutubeTranscript.fetchTranscript(videoId);
-  return segments.map((s) => s.text).join(" ");
+export async function getTranscript(videoId: string): Promise<string | null> {
+  try {
+    const segments = await YoutubeTranscript.fetchTranscript(videoId);
+    if (!segments || segments.length === 0) return null;
+    return segments.map((s) => s.text).join(" ");
+  } catch {
+    return null;
+  }
 }
 
-export async function getVideoTitle(videoId: string): Promise<string> {
+interface VideoMeta {
+  title: string;
+  author: string;
+}
+
+export async function getVideoMeta(videoId: string): Promise<VideoMeta> {
   try {
-    // Use oEmbed API (no key needed)
     const res = await fetch(
       `https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${videoId}&format=json`
     );
-    if (!res.ok) return "Untitled Video";
+    if (!res.ok) return { title: "Untitled Video", author: "" };
     const data = await res.json();
-    return data.title || "Untitled Video";
+    return {
+      title: data.title || "Untitled Video",
+      author: data.author_name || "",
+    };
   } catch {
-    return "Untitled Video";
+    return { title: "Untitled Video", author: "" };
   }
 }
