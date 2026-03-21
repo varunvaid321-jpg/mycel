@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { generateWeeklyBrief } from "@/lib/ai";
+import { generateWeeklyBrief, type AIWeeklyBrief } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
+
+// Server-side cache: avoid re-calling AI on every request.
+// Stores the last AI brief + the entry count it was based on.
+// Re-generates only when entry count changes (new entry planted).
+let cachedBrief: AIWeeklyBrief | null = null;
+let cachedEntryCount = -1;
+let cachedAt = 0;
+const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
 
 export async function GET() {
   const weekAgo = new Date();
@@ -23,10 +31,28 @@ export async function GET() {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
 
-  // Try AI brief
-  const aiBrief = await generateWeeklyBrief(entries);
+  // AI brief: use cache if entry count unchanged and not too stale
+  const now = Date.now();
+  const cacheValid =
+    cachedBrief &&
+    cachedEntryCount === entries.length &&
+    now - cachedAt < CACHE_MAX_AGE_MS;
 
-  // Fallback rule-based data
+  let aiBrief: AIWeeklyBrief | null;
+  if (cacheValid) {
+    aiBrief = cachedBrief;
+    console.log(`[weekly] cache HIT — ${entries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
+  } else {
+    console.log(`[weekly] cache MISS — entries: ${entries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
+    aiBrief = await generateWeeklyBrief(entries);
+    if (aiBrief) {
+      cachedBrief = aiBrief;
+      cachedEntryCount = entries.length;
+      cachedAt = now;
+    }
+  }
+
+  // Fallback rule-based data (always computed — cheap)
   const reminders = entries
     .filter((e) => e.category === "signal")
     .slice(0, 5)
