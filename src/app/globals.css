@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Roboto:wght@300;400;500&family=Roboto+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
 
-html { background: #ffffff; }
+html { background: #0a0a08; }
 
 body {
   -webkit-font-smoothing: antialiased;
@@ -12,13 +12,13 @@ body {
 }
 
 ::selection {
-  background: rgba(26, 115, 232, 0.15);
-  color: #202124;
+  background: rgba(212, 170, 124, 0.3);
+  color: #ffffff;
 }
 
 textarea::-webkit-scrollbar { width: 4px; }
 textarea::-webkit-scrollbar-track { background: transparent; }
-textarea::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 2px; }
+textarea::-webkit-scrollbar-thumb { background: #3a3a30; border-radius: 2px; }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 0.4; }
