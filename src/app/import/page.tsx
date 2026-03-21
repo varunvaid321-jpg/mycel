@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  PAGE_CONTAINER,
+  CARD,
+  CARD_PADDING,
+  INPUT_TEXTAREA,
+  BTN_IMPORT,
+  BTN_TEXT_LINK,
+  TEXT_META,
+  TEXT_EMPTY,
+  TEXT_STATUS_SIGNAL,
+  TEXT_STATUS_FRUIT,
+} from "@/lib/design-tokens";
 
 export default function ImportPage() {
   const [raw, setRaw] = useState("");
@@ -87,7 +99,7 @@ export default function ImportPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <div className={PAGE_CONTAINER}>
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl text-accent font-medium">Import Memories</h1>
@@ -97,7 +109,7 @@ export default function ImportPage() {
           </div>
           <button
             onClick={() => router.push("/")}
-            className="text-sm text-text-faint hover:text-text-muted transition-colors"
+            className={BTN_TEXT_LINK}
           >
             &larr; back
           </button>
@@ -106,7 +118,7 @@ export default function ImportPage() {
         {!result ? (
           <div className="space-y-6">
             {/* Instructions */}
-            <div className="bg-surface border border-border rounded-lg p-5">
+            <div className={`${CARD} ${CARD_PADDING}`}>
               <h2 className="text-base font-medium text-text-primary mb-3">How to export from ChatGPT</h2>
               <ol className="space-y-2 text-sm text-text-muted">
                 <li className="flex gap-2">
@@ -122,7 +134,7 @@ export default function ImportPage() {
                   Paste below — one memory per line
                 </li>
               </ol>
-              <p className="text-xs text-text-faint mt-3">
+              <p className={`${TEXT_EMPTY} mt-3`}>
                 Or: Settings &rarr; Data Controls &rarr; Export Data &rarr; upload the JSON file below.
               </p>
             </div>
@@ -137,11 +149,9 @@ export default function ImportPage() {
                 onChange={(e) => setRaw(e.target.value)}
                 placeholder={"User prefers dark mode\nUser lives in Toronto with family\nUser works at GM in infotainment\n..."}
                 rows={12}
-                className="w-full bg-surface border border-border rounded-lg px-4 py-3 text-text-primary
-                  text-sm leading-relaxed resize-none outline-none focus:border-accent/50 transition-colors
-                  placeholder:text-text-faint"
+                className={`${INPUT_TEXTAREA} bg-surface border border-border rounded-lg px-4 py-3 text-sm leading-relaxed resize-y focus:border-accent/50 transition-colors`}
               />
-              <p className="text-xs text-text-faint mt-1">
+              <p className={`${TEXT_EMPTY} mt-1`}>
                 {raw.split("\n").filter((l) => l.trim().length >= 3).length} memories detected
               </p>
             </div>
@@ -160,19 +170,18 @@ export default function ImportPage() {
                   file:text-sm hover:file:bg-surface-hover file:transition-colors file:cursor-pointer"
               />
               {jsonFile && (
-                <p className="text-xs text-fruit mt-1">File loaded — ready to import</p>
+                <p className={`${TEXT_STATUS_FRUIT} mt-1`}>File loaded — ready to import</p>
               )}
             </div>
 
             {error && (
-              <p className="text-sm text-signal">{error}</p>
+              <p className={TEXT_STATUS_SIGNAL}>{error}</p>
             )}
 
             <button
               onClick={handleImport}
               disabled={importing || (!raw.trim() && !jsonFile)}
-              className="w-full py-3 min-h-[44px] bg-accent text-bg rounded-lg text-sm font-medium
-                transition-opacity hover:opacity-90 disabled:opacity-30"
+              className={BTN_IMPORT}
             >
               {importing ? "Importing..." : "Import to Mycel"}
             </button>
@@ -183,7 +192,7 @@ export default function ImportPage() {
             <div className="bg-fruit/10 border border-fruit/30 rounded-lg p-5 text-center">
               <p className="text-2xl text-fruit font-medium">{result.imported} imported</p>
               {result.skipped > 0 && (
-                <p className="text-sm text-text-muted mt-1">{result.skipped} skipped (duplicates or empty)</p>
+                <p className={`${TEXT_META} mt-1`}>{result.skipped} skipped (duplicates or empty)</p>
               )}
             </div>
 
@@ -191,7 +200,7 @@ export default function ImportPage() {
               {result.details.map((d, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <span className="text-fruit">&#10003;</span>
-                  <span className="text-text-faint uppercase text-xs w-16 shrink-0">{d.category}</span>
+                  <span className={`${TEXT_EMPTY} uppercase w-16 shrink-0`}>{d.category}</span>
                   <span className="text-text-primary truncate">{d.content}</span>
                 </div>
               ))}
@@ -199,8 +208,7 @@ export default function ImportPage() {
 
             <button
               onClick={() => router.push("/")}
-              className="w-full py-3 min-h-[44px] bg-accent text-bg rounded-lg text-sm font-medium
-                transition-opacity hover:opacity-90"
+              className={`${BTN_IMPORT} disabled:opacity-100`}
             >
               Go to Journal
             </button>

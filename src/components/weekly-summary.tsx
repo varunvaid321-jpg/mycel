@@ -7,6 +7,8 @@ import {
   TEXT_SECTION_HEADER,
   TEXT_SUBSECTION_HEADER,
   TEXT_BULLET,
+  TEXT_META,
+  TEXT_NOTE,
   TAG_THEME,
 } from "@/lib/design-tokens";
 
@@ -58,7 +60,7 @@ export default function WeeklySummary() {
         <span className={`${TEXT_SECTION_HEADER} text-network`}>
           The Network &middot; Weekly Brief
         </span>
-        <span className="ml-auto font-mono text-sm text-text-faint">
+        <span className={`ml-auto ${TEXT_META}`}>
           {data.totalEntries} entries
         </span>
         <svg
@@ -128,7 +130,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className={TEXT_NOTE}>
                 ai-powered weekly brief
               </p>
             </>
@@ -175,7 +177,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className={TEXT_NOTE}>
                 rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
               </p>
             </>
@@ -189,7 +191,7 @@ export default function WeeklySummary() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+      <h3 className={TEXT_SUBSECTION_HEADER}>
         {title}
       </h3>
       <ul className="space-y-1">{children}</ul>

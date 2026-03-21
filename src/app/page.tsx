@@ -17,8 +17,12 @@ import {
   TEXT_FOOTER,
   BTN_TEXT_LINK,
   TEXT_META,
+  BTN_LOGOUT,
   BTN_PILL_ACTIVE_CATEGORY,
   BTN_PILL_INACTIVE,
+  BTN_DECISIONS_ACTIVE,
+  BTN_DECISIONS_INACTIVE,
+  FILTER_SECTION,
 } from "@/lib/design-tokens";
 
 export default function Home() {
@@ -70,8 +74,7 @@ export default function Home() {
               </span>
               <button
                 onClick={handleLogout}
-                className="font-mono text-sm text-text-faint hover:text-signal
-                  tracking-wider transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className={BTN_LOGOUT}
               >
                 log out
               </button>
@@ -105,11 +108,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setShowDecisions(true)}
-              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center ${
-                showDecisions
-                  ? "border-fruit/50 text-fruit bg-fruit/10"
-                  : "border-border text-text-faint hover:text-text-muted"
-              }`}
+              className={showDecisions ? BTN_DECISIONS_ACTIVE : BTN_DECISIONS_INACTIVE}
             >
               decisions
             </button>

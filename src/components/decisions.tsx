@@ -7,6 +7,10 @@ import {
   TEXT_SECTION_HEADER,
   TEXT_META,
   TEXT_EMPTY,
+  TEXT_LABEL,
+  TEXT_ENTRY_CONTENT,
+  TAG_BASE,
+  TAG_STYLES,
 } from "@/lib/design-tokens";
 
 interface LinkedEntry {
@@ -82,18 +86,18 @@ export default function Decisions({ visible }: DecisionsProps) {
           className={`${CARD} ${BORDER_FRUIT} p-4 animate-fade-in`}
         >
           <div className="flex items-center gap-2 mb-2">
-            <span className="font-mono text-sm tracking-wider uppercase text-fruit/70 px-1.5 py-0.5 bg-fruit/10 rounded">
+            <span className={`${TAG_BASE} ${TAG_STYLES.fruit}`}>
               fruit
             </span>
             <span className={TEXT_META}>
               {d.localDate} &middot; {d.localTime}
             </span>
           </div>
-          <p className="text-[1.05rem] leading-relaxed mb-3">{d.content}</p>
+          <p className={`${TEXT_ENTRY_CONTENT} mb-3`}>{d.content}</p>
 
           {d.linkedEntries.length > 0 && (
             <div className="space-y-1.5 pl-3 border-l border-border">
-              <span className="font-mono text-xs tracking-wider uppercase text-text-faint">
+              <span className={TEXT_LABEL}>
                 thoughts that led here
               </span>
               {d.linkedEntries.map((le) => (
@@ -105,7 +109,7 @@ export default function Decisions({ visible }: DecisionsProps) {
                     {le.content.slice(0, 150)}
                     {le.content.length > 150 ? "..." : ""}
                   </p>
-                  <span className="font-mono text-xs text-text-faint">
+                  <span className={TEXT_META}>
                     {le.localDate} &middot; {le.category}
                   </span>
                 </div>

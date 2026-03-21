@@ -6,6 +6,10 @@ import {
   INPUT_PASSWORD,
   BTN_ACCENT_SOLID,
   ALERT_SIGNAL_STRONG,
+  TEXT_STATUS_SIGNAL,
+  TEXT_TAGLINE,
+  TEXT_FOOTER,
+  TEXT_META,
 } from "@/lib/design-tokens";
 
 export default function LoginPage() {
@@ -119,7 +123,7 @@ export default function LoginPage() {
         <h1 className="text-5xl md:text-6xl font-normal tracking-[0.12em] lowercase text-accent mb-2">
           mycel
         </h1>
-        <p className="text-base italic text-text-muted tracking-wide mb-12">
+        <p className={`${TEXT_TAGLINE} text-base tracking-wide mb-12`}>
           Ideas spread quietly.
         </p>
 
@@ -127,7 +131,7 @@ export default function LoginPage() {
           /* ── Lockout recovery ── */
           <form onSubmit={handleRecovery} className="space-y-4 text-left">
             <div className={ALERT_SIGNAL_STRONG}>
-              <p className="font-mono text-sm text-signal tracking-wider uppercase mb-1">
+              <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 account locked
               </p>
               <p className="text-sm text-text-muted">{lockMessage}</p>
@@ -192,7 +196,7 @@ export default function LoginPage() {
           /* ── Geo challenge ── */
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className={ALERT_SIGNAL_STRONG}>
-              <p className="font-mono text-sm text-signal tracking-wider uppercase mb-1">
+              <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 security check
               </p>
               <p className="text-sm text-text-muted">
@@ -222,19 +226,19 @@ export default function LoginPage() {
         )}
 
         {error && (
-          <p className="mt-3 font-mono text-sm text-signal tracking-wide">
+          <p className={`mt-3 ${TEXT_STATUS_SIGNAL}`}>
             {error}
           </p>
         )}
 
         {remaining != null && remaining > 0 && remaining < MAX_DISPLAY && (
-          <p className="mt-1 font-mono text-xs text-text-faint">
+          <p className={`mt-1 ${TEXT_META}`}>
             {remaining} attempts remaining
           </p>
         )}
       </div>
 
-      <div className="absolute bottom-8 font-mono text-sm text-text-faint tracking-[0.2em]">
+      <div className={`absolute bottom-8 ${TEXT_FOOTER}`}>
         no names &middot; no traces &middot; just growth
       </div>
     </div>

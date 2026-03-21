@@ -6,6 +6,9 @@ import {
   TEXT_SECTION_HEADER,
   TEXT_SUBSECTION_HEADER,
   TEXT_BULLET,
+  TEXT_META,
+  TEXT_NOTE,
+  TAG_THEME,
 } from "@/lib/design-tokens";
 
 interface AIReview {
@@ -49,7 +52,7 @@ export default function MonthlyReview() {
         <span className={`${TEXT_SECTION_HEADER} text-network/80`}>
           Monthly Review
         </span>
-        <span className="ml-auto font-mono text-sm text-text-faint">
+        <span className={`ml-auto ${TEXT_META}`}>
           {data.totalEntries} entries &middot; 30d
         </span>
         <svg
@@ -79,7 +82,7 @@ export default function MonthlyReview() {
                       <div key={i}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm text-text-primary">{a.topic}</span>
-                          <span className="font-mono text-sm text-accent">{a.count}</span>
+                          <span className={`${TEXT_META} text-accent`}>{a.count}</span>
                         </div>
                         <div className="h-2 bg-border rounded-full overflow-hidden">
                           <div
@@ -145,7 +148,7 @@ export default function MonthlyReview() {
 
               {ai.reflection && (
                 <div className="pt-3 border-t border-border">
-                  <p className="text-sm leading-relaxed italic text-text-muted font-serif">
+                  <p className={`${TEXT_BULLET} italic text-text-muted font-serif`}>
                     {ai.reflection}
                   </p>
                 </div>
@@ -161,10 +164,7 @@ export default function MonthlyReview() {
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {data.topFocusAreas.map((a, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-sm"
-                      >
+                      <span key={i} className={TAG_THEME}>
                         {a.topic}
                         <span className="ml-1 text-text-faint">{a.count}</span>
                       </span>
@@ -189,7 +189,7 @@ export default function MonthlyReview() {
                 </div>
               )}
 
-              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className={TEXT_NOTE}>
                 basic stats &middot; add ANTHROPIC_API_KEY for ai review
               </p>
             </>

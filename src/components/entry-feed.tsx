@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import EntryCard from "./entry-card";
-import { TEXT_EMPTY } from "@/lib/design-tokens";
+import { TEXT_EMPTY, TEXT_META } from "@/lib/design-tokens";
 
 interface Entry {
   id: string;
@@ -76,7 +76,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
         <EntryCard key={entry.id} entry={entry} onDelete={handleDelete} searchTerm={search} />
       ))}
       {entries.length < total && (
-        <p className="text-center font-mono text-sm text-text-faint tracking-wider pt-4">
+        <p className={`text-center pt-4 ${TEXT_META}`}>
           showing {entries.length} of {total}
         </p>
       )}
