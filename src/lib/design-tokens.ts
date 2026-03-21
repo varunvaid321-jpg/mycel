@@ -26,6 +26,7 @@ export const BTN_TEXT_LINK = "font-mono text-sm text-text-faint hover:text-accen
 
 // ── Inputs ──
 export const INPUT_TEXT = "bg-surface border border-border rounded px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 font-mono text-sm text-text-primary tracking-wide placeholder:text-text-faint outline-none focus:border-accent/50 transition-colors";
+export const INPUT_STANDALONE = "w-full bg-surface border border-border rounded-lg px-4 py-3 min-h-[44px] font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint outline-none transition-colors focus:border-accent";
 export const INPUT_PASSWORD = "flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px] font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint outline-none transition-colors focus:border-accent";
 export const INPUT_TEXTAREA = "w-full bg-transparent text-lg leading-relaxed resize-none outline-none placeholder:italic font-serif text-text-primary placeholder:text-text-faint";
 
@@ -42,6 +43,7 @@ export const TAG_TOPIC = "font-mono text-xs tracking-wider px-1.5 py-0.5 rounded
 export const TAG_THEME = "px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-sm";
 
 // ── Typography ──
+export const TEXT_FORM_LABEL = "block text-sm text-text-muted mb-1";
 export const TEXT_ENTRY_CONTENT = "text-[1.05rem] leading-[1.75] whitespace-pre-wrap";
 export const TEXT_META = "font-mono text-sm text-text-faint tracking-wide";
 export const TEXT_SECTION_HEADER = "font-mono text-sm tracking-[0.2em] uppercase";

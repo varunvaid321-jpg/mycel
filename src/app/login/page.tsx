@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   INPUT_PASSWORD,
-  INPUT_TEXT,
+  INPUT_STANDALONE,
   BTN_ACCENT_SOLID,
   ALERT_SIGNAL_STRONG,
   TEXT_STATUS_SIGNAL,
+  TEXT_STATUS_FRUIT,
   TEXT_TAGLINE,
   TEXT_FOOTER,
   TEXT_META,
+  TEXT_FORM_LABEL,
 } from "@/lib/design-tokens";
 
 export default function LoginPage() {
@@ -124,7 +126,7 @@ export default function LoginPage() {
         <h1 className={`${locked ? "text-2xl mt-2" : "text-5xl md:text-6xl"} font-normal tracking-[0.12em] lowercase text-accent mb-2`}>
           mycel
         </h1>
-        <p className={`${TEXT_TAGLINE} text-base tracking-wide ${locked ? "mb-4" : "mb-12"}`}>
+        <p className={`${TEXT_TAGLINE} ${locked ? "mb-4" : "text-base tracking-wide mb-12"}`}>
           Ideas spread quietly.
         </p>
 
@@ -135,7 +137,7 @@ export default function LoginPage() {
               <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 account locked
               </p>
-              <p className="text-sm text-text-muted">{lockMessage}</p>
+              <p className={TEXT_META}>{lockMessage}</p>
             </div>
 
             <p className="text-sm text-text-primary">
@@ -144,7 +146,7 @@ export default function LoginPage() {
 
             {recoveryQuestions.map((q, i) => (
               <div key={i}>
-                <label className="block text-sm text-text-muted mb-1">{q}</label>
+                <label className={TEXT_FORM_LABEL}>{q}</label>
                 <input
                   type="text"
                   value={recoveryAnswers[i]}
@@ -154,7 +156,7 @@ export default function LoginPage() {
                     setRecoveryAnswers(updated);
                   }}
                   autoComplete="off"
-                  className={`w-full ${INPUT_TEXT} text-base sm:text-sm rounded-lg px-4 py-3`}
+                  className={INPUT_STANDALONE}
                 />
               </div>
             ))}
@@ -162,7 +164,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || recoveryAnswers.some((a) => !a.trim())}
-              className={`w-full ${BTN_ACCENT_SOLID} rounded`}
+              className={`w-full ${BTN_ACCENT_SOLID}`}
             >
               {loading ? "..." : "unlock"}
             </button>
@@ -171,7 +173,7 @@ export default function LoginPage() {
           /* ── Normal passphrase ── */
           <form onSubmit={handleSubmit} className="w-full">
             {recoverySuccess && (
-              <p className="mb-4 font-mono text-sm text-fruit tracking-wide">
+              <p className={`mb-4 ${TEXT_STATUS_FRUIT}`}>
                 Identity verified — enter your passphrase
               </p>
             )}
@@ -200,7 +202,7 @@ export default function LoginPage() {
               <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 security check
               </p>
-              <p className="text-sm text-text-muted">
+              <p className={TEXT_META}>
                 Login from outside your usual area.
               </p>
             </div>
