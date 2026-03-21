@@ -48,12 +48,14 @@ export default function Home() {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
+                  timeZone: "America/Toronto",
                 })}
               </span>
               <span className="font-mono text-[0.6rem] text-text-faint tracking-wide sm:hidden">
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
+                  timeZone: "America/Toronto",
                 })}
               </span>
               <button

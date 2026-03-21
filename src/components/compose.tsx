@@ -43,11 +43,13 @@ export default function Compose({ onSaved }: ComposeProps) {
         year: "numeric",
         month: "long",
         day: "numeric",
+        timeZone: "America/Toronto",
       });
       const localTime = now.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
         hour12: true,
+        timeZone: "America/Toronto",
       });
 
       let res: Response;
