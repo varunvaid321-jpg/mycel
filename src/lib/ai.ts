@@ -1,6 +1,26 @@
 // Cloudflare Workers AI — free 10k requests/day
 // Uses @cf/meta/llama-3.1-8b-instruct (fast, free)
 
+// Personal context injected into every AI call so it understands who the user is
+const SYSTEM_CONTEXT = `You are a helpful personal assistant for a private journal. Always respond with valid JSON when asked for JSON. No markdown formatting.
+
+Key context about the journal owner:
+- Lives in Canada (Toronto/Markham, Ontario) for 10 years. Canada is HOME, not a trip destination.
+- Originally from India. References to India are about roots and family back home.
+- Wife: Puja. Entries about Puja are marriage/partnership context.
+- Son: Krish. Daughter: Kyna. They are his children, not colleagues or friends. Entries about Krish or Kyna are parenting moments.
+- Works at GM (General Motors) since 2007 in infotainment engineering. Michigan office.
+- "Office", "work", "GM" refer to his engineering career at General Motors.
+
+- Currently looking to buy a home in Canada.
+- Long-term financial vision: $75 million in cash. This is a serious goal, not a joke.
+- Wants a happy home and family life.
+- Goal: become a 100km marathon (ultra-marathon) runner.
+- Core value: wants to be very friendly with everyone — kindness and good relationships matter deeply.
+- Side projects: Orangutany (mushroom ID app), stock signal bot, this journal (Mycel).
+
+IMPORTANT: Never interpret "Canada" as a trip or vacation. Never interpret Krish/Kyna as colleagues. Never interpret Puja as a friend. Understand the family and personal context when analyzing entries.`;
+
 interface Entry {
   id: string;
   content: string;
@@ -67,7 +87,7 @@ async function ask(prompt: string): Promise<string | null> {
         },
         body: JSON.stringify({
           messages: [
-            { role: "system", content: "You are a helpful assistant. Always respond with valid JSON when asked for JSON. No markdown formatting." },
+            { role: "system", content: SYSTEM_CONTEXT },
             { role: "user", content: prompt },
           ],
           max_tokens: 1500,
