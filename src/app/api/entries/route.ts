@@ -17,13 +17,34 @@ export async function GET(request: Request) {
     where.category = category;
   }
 
-  if (search) {
-    where.content = { contains: search };
-  }
+  // For search, we'll filter after fetch since SQLite doesn't support case-insensitive contains
+  let searchTerm = search?.toLowerCase() || "";
 
   // Topic filtering via tags field (comma-separated)
   if (topic && topic !== "all") {
     where.tags = { contains: topic };
+  }
+
+  if (searchTerm) {
+    // Fetch more entries and filter in-memory for case-insensitive search
+    const allEntries = await prisma.entry.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+
+    const filtered = allEntries.filter(
+      (e) =>
+        e.content.toLowerCase().includes(searchTerm) ||
+        e.tags.toLowerCase().includes(searchTerm) ||
+        e.category.toLowerCase().includes(searchTerm)
+    );
+
+    return NextResponse.json({
+      entries: filtered.slice(offset, offset + limit),
+      total: filtered.length,
+      searchTerm: search,
+    });
   }
 
   const [entries, total] = await Promise.all([

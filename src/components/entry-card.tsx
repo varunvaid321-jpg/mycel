@@ -16,6 +16,7 @@ interface Entry {
 interface EntryCardProps {
   entry: Entry;
   onArchive: (id: string) => void;
+  searchTerm?: string;
 }
 
 const tagStyles: Record<string, string> = {
@@ -26,7 +27,28 @@ const tagStyles: Record<string, string> = {
   fruit: "bg-fruit/15 text-fruit",
 };
 
-export default function EntryCard({ entry, onArchive }: EntryCardProps) {
+function HighlightedText({ text, term }: { text: string; term?: string }) {
+  if (!term) return <>{text}</>;
+
+  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-accent/30 text-text-primary rounded px-0.5">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+export default function EntryCard({ entry, onArchive, searchTerm }: EntryCardProps) {
   const cat = CATEGORIES[entry.category as Category];
   const topics = entry.tags
     ? entry.tags.split(",").filter(Boolean) as Topic[]
@@ -69,7 +91,7 @@ export default function EntryCard({ entry, onArchive }: EntryCardProps) {
       </div>
 
       <div className="text-[1.05rem] leading-[1.75] whitespace-pre-wrap">
-        {entry.content}
+        <HighlightedText text={entry.content} term={searchTerm} />
       </div>
     </div>
   );
