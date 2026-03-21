@@ -76,7 +76,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
   return (
     <div className="space-y-3">
       {entries.map((entry) => (
-        <EntryCard key={entry.id} entry={entry} onArchive={handleArchive} />
+        <EntryCard key={entry.id} entry={entry} onArchive={handleArchive} searchTerm={search} />
       ))}
       {entries.length < total && (
         <p className="text-center font-mono text-[0.65rem] text-text-faint tracking-wider pt-4">
