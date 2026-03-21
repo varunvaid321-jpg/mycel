@@ -59,11 +59,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
-        <div className="absolute w-[600px] h-[400px] left-[10%] top-[40%] bg-accent rounded-full blur-[120px]" />
-        <div className="absolute w-[400px] h-[500px] right-[10%] top-[20%] bg-network rounded-full blur-[120px]" />
-        <div className="absolute w-[500px] h-[300px] left-[40%] bottom-[10%] bg-fruit rounded-full blur-[120px]" />
+      {/* Subtle background */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <div className="absolute w-[600px] h-[400px] left-[10%] top-[40%] bg-accent rounded-full blur-[150px]" />
+        <div className="absolute w-[400px] h-[500px] right-[10%] top-[20%] bg-network rounded-full blur-[150px]" />
       </div>
 
       <div className="text-center z-10 px-6">
