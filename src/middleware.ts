@@ -31,6 +31,7 @@ export function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/logout") ||
+    pathname.startsWith("/api/backup") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
