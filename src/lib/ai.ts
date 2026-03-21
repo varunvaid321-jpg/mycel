@@ -53,6 +53,7 @@ SIDE PROJECTS:
 - Mycel (amushroom.com) — this private AI journal.
 
 COMMUNICATION STYLE:
+- ALWAYS address the journal owner as "you" — never say "the user", "the journal owner", "they", or "the author". You are speaking directly to them.
 - Reagan/Churchill leadership humor for routine interactions. Light, confident, endearing.
 - Direct, concise answers. No "short answer" labels. Lead with the answer.
 - English only unless explicitly asked for Hindi.
@@ -230,7 +231,7 @@ export async function generateGuide(
   const formatted = formatEntries(entries.slice(0, 20));
 
   const result = await ask(
-    `You are a thoughtful personal guide reading someone's private journal.
+    `You are a thoughtful personal guide. You are speaking DIRECTLY to the journal owner — use "you" and "your", never "the user" or "they".
 
 Entries:
 ${formatted}
@@ -238,7 +239,7 @@ ${formatted}
 Say ONE thing that matters right now. Return JSON:
 {"message": "one sentence max 25 words", "type": "insight|action|reflection|silent", "intensity": "gentle|warm|direct"}
 
-Rules: If recurring theme without resolution, name it. If they committed to something, remind warmly. If calm, return type "silent". Never preachy. Reference their specific words.`,
+Rules: Address them directly as "you". If recurring theme without resolution, name it. If they committed to something, remind warmly. If calm, return type "silent". Never preachy. Reference their specific words.`,
     "guide"
   );
 
@@ -271,7 +272,9 @@ export async function generateWeeklyBrief(
   const result = await ask(
     `Analyze ONLY these journal entries from the past 7 days. Categories: spore=thought, root=reflection, signal=reminder, decompose=letting go, fruit=action.
 
-IMPORTANT: Only analyze what the user ACTUALLY WROTE below. Do not bring up topics from background context unless the user explicitly mentioned them in these entries. Entries tagged "imported" or "chatgpt" are reference data — skip them in analysis.
+IMPORTANT: Only analyze what was ACTUALLY WRITTEN below. Do not bring up topics from background context unless explicitly mentioned in these entries. Entries tagged "imported" or "chatgpt" are reference data — skip them.
+
+TONE: You are speaking DIRECTLY to the journal owner. Always use "you" and "your" — never say "the user", "the journal owner", "they", or "the author". Write like a trusted friend reflecting back what they see, not a therapist writing clinical notes.
 
 ${formatted}
 
@@ -282,7 +285,7 @@ Return JSON with these keys:
 - "thingsToLetGo": array of 1-3 things to release — use **bold** on key words
 - "prioritizedActions": array of exactly 3 concrete actions — use **bold** on key words
 
-Each string 1-2 sentences max. Bold the most important 2-3 words in each string using **word**.`,
+Each string 1-2 sentences max. Bold the most important 2-3 words in each string using **word**. Address the person as "you" throughout.`,
     "weekly"
   );
 
@@ -351,12 +354,12 @@ export async function generateMonthlyReview(
   const formatted = formatEntries(entries.slice(0, 40));
 
   const result = await ask(
-    `Analyze these journal entries from the past 30 days.
+    `Analyze these journal entries from the past 30 days. You are speaking DIRECTLY to the journal owner — always use "you" and "your", never "the user" or "they". Write like a trusted friend, not a therapist.
 
 ${formatted}
 
 Return JSON:
-{"topFocusAreas": [{"topic":"string","count":0}], "keyDecisions": ["strings"], "circlingThemes": ["unresolved themes"], "shiftedTopics": ["topics that stopped"], "reflection": "one paragraph reflection"}`,
+{"topFocusAreas": [{"topic":"string","count":0}], "keyDecisions": ["strings"], "circlingThemes": ["unresolved themes"], "shiftedTopics": ["topics that stopped"], "reflection": "one paragraph reflection addressed directly to you"}`,
     "monthly"
   );
 
