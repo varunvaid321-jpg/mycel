@@ -15,10 +15,34 @@ Private AI-powered personal journal at amushroom.com. Captures thoughts via typi
 
 ## Rules
 
-### PR-only workflow
+### PR-only workflow (RIGID — no exceptions)
 - NEVER push directly to main
-- Branch → changes → `npx next build` passes → push → `gh pr create` → `gh pr merge N --squash`
-- Every PR auto-deploys via GitHub Actions
+- Every change goes through a PR. No exceptions.
+- Full workflow for every PR:
+
+1. **Branch**: `git checkout -b feature/name` or `fix/name`
+2. **Implement**: Make changes
+3. **Build**: `DATABASE_URL="file:./dev.db" npx next build` — must pass with zero errors
+4. **Code review**: Review all changed files for:
+   - Type safety (no `any`, no missing types)
+   - Error handling (all AI/fetch calls wrapped in try/catch, fallbacks)
+   - No hardcoded secrets or credentials
+   - Mobile responsiveness (touch targets ≥44px, no overflow)
+   - Dark theme compliance (all text bright and readable)
+   - `force-dynamic` on all non-static API routes
+5. **End-to-end test**: After build passes, run targeted tests against the changed features:
+   - API routes: `curl` test each changed endpoint with expected inputs + edge cases
+   - UI components: verify render (start dev server, hit the page, check response)
+   - AI features: verify with and without API key (fallback works)
+   - Record results in PR description
+6. **PR description must include**:
+   - Summary of changes
+   - E2E test results table (endpoint/action → expected → actual → pass/fail)
+   - Any known limitations
+7. **Push + PR**: `git push origin branch` → `gh pr create` → `gh pr merge N --squash`
+8. **Verify deploy**: After merge, confirm GitHub Action triggers Render deploy
+
+Every PR auto-deploys via GitHub Actions. If deploy fails, fix immediately.
 
 ### Build command (Render)
 ```
