@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ALERT_SIGNAL, TEXT_STATUS_SIGNAL } from "@/lib/design-tokens";
 
 export default function BackupAlert() {
   const [overdue, setOverdue] = useState(false);
@@ -21,8 +22,8 @@ export default function BackupAlert() {
   if (!overdue) return null;
 
   return (
-    <div className="mt-4 px-3 py-2 rounded bg-signal/10 border border-signal/20 text-center">
-      <p className="text-xs text-signal">
+    <div className={`mt-4 px-3 py-2 text-center ${ALERT_SIGNAL}`}>
+      <p className={TEXT_STATUS_SIGNAL}>
         Backup overdue{hours > 0 ? ` (${hours}h ago)` : ""} — data may not be protected
       </p>
     </div>

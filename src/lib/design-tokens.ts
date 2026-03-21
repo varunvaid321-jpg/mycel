@@ -9,7 +9,6 @@ export const CARD_HOVER = "transition-colors hover:border-border/80";
 // ── Accent Borders (left stripe on section cards) ──
 export const BORDER_NETWORK = "border-l-[3px] border-l-network";
 export const BORDER_FRUIT = "border-l-[3px] border-l-fruit/60";
-export const BORDER_SIGNAL = "border border-signal/30";
 
 // ── Buttons ──
 export const BTN_PRIMARY = "bg-transparent border border-accent text-accent rounded px-4 py-2.5 min-h-[44px] font-mono text-sm tracking-[0.15em] uppercase transition-all hover:bg-accent hover:text-bg disabled:opacity-30";
@@ -56,7 +55,6 @@ export const TEXT_BULLET = "text-sm leading-relaxed";
 
 // ── Layout ──
 export const PAGE_CONTAINER = "max-w-2xl mx-auto px-4 py-8 md:py-12";
-export const SECTION_SPACING = "mb-8";
 export const FILTER_ROW = "flex items-center gap-3 flex-wrap";
 export const FILTER_SECTION = "mb-5 pb-4 border-b border-border space-y-3";
 
@@ -64,10 +62,21 @@ export const FILTER_SECTION = "mb-5 pb-4 border-b border-border space-y-3";
 export const ALERT_SIGNAL = "bg-signal/10 border border-signal/20 rounded-md";
 export const ALERT_SIGNAL_STRONG = "bg-signal/10 border border-signal/30 rounded-lg px-4 py-3";
 
-// ── Icons ──
-export const ICON_X = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-export const ICON_MIC = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
-export const ICON_CHEVRON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>`;
+// ── Compose Box ──
+export const COMPOSE_BOX = "bg-surface border rounded-lg p-4 transition-colors focus-within:border-accent/60";
+export const COMPOSE_BOX_ACTIVE = "border-signal/40";
+export const COMPOSE_BOX_IDLE = "border-border";
+
+// ── Status Text ──
+export const TEXT_STATUS_FRUIT = "font-mono text-xs text-fruit tracking-wider";
+export const TEXT_STATUS_SIGNAL = "font-mono text-xs text-signal tracking-wider";
+export const TEXT_NOTE = "font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border";
+
+// ── Logout / Text-action Buttons ──
+export const BTN_LOGOUT = "font-mono text-sm text-text-faint hover:text-signal tracking-wider transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center";
+export const BTN_DECISIONS_INACTIVE = "px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center border-border text-text-faint hover:text-text-muted";
+export const BTN_DECISIONS_ACTIVE = "px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center border-fruit/50 text-fruit bg-fruit/10";
+export const BTN_IMPORT = "w-full py-3 min-h-[44px] bg-accent text-bg rounded-lg text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-30";
 
 // ── Mic Button ──
 export const MIC_LISTENING = "bg-signal/20 text-signal border border-signal/40 animate-pulse";

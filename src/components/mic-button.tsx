@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MIC_BASE, MIC_LISTENING, MIC_IDLE } from "@/lib/design-tokens";
+import { MIC_BASE, MIC_LISTENING, MIC_IDLE, TEXT_META } from "@/lib/design-tokens";
 
 interface MicButtonProps {
   onTranscript: (text: string) => void;
@@ -82,7 +82,7 @@ export default function MicButton({ onTranscript, onInterim, onListeningChange }
 
   if (!supported) {
     return (
-      <span className="font-mono text-sm text-text-faint">
+      <span className={TEXT_META}>
         mic unavailable
       </span>
     );

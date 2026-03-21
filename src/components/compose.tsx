@@ -8,6 +8,11 @@ import {
   BTN_PRIMARY,
   ALERT_SIGNAL,
   TEXT_META,
+  TEXT_STATUS_FRUIT,
+  TEXT_STATUS_SIGNAL,
+  COMPOSE_BOX,
+  COMPOSE_BOX_ACTIVE,
+  COMPOSE_BOX_IDLE,
 } from "@/lib/design-tokens";
 
 interface ComposeProps {
@@ -115,8 +120,7 @@ export default function Compose({ onSaved }: ComposeProps) {
   return (
     <div className="mb-8">
       <div
-        className={`bg-surface border rounded-lg p-4 transition-colors focus-within:border-accent/60
-          ${listening ? "border-signal/40" : hasUrl ? "border-signal/40" : "border-border"}`}
+        className={`${COMPOSE_BOX} ${listening || hasUrl ? COMPOSE_BOX_ACTIVE : COMPOSE_BOX_IDLE}`}
       >
         {/* Show textarea when not listening, or when listening show the live text */}
         <div className="relative">
@@ -193,7 +197,7 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       {saved && (
         <div className="mt-2 text-center animate-saved">
-          <span className="font-mono text-xs text-fruit tracking-wider">
+          <span className={TEXT_STATUS_FRUIT}>
             planted
           </span>
         </div>
@@ -201,13 +205,13 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       {error && (
         <div className="mt-2 text-center">
-          <span className="font-mono text-xs text-signal tracking-wider">
+          <span className={TEXT_STATUS_SIGNAL}>
             {error}
           </span>
         </div>
       )}
 
-      <p className="mt-2 text-right font-mono text-sm text-text-faint tracking-wide">
+      <p className={`mt-2 text-right ${TEXT_META}`}>
         &#8984;+enter to save
       </p>
     </div>

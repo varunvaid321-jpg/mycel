@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CARD_SECTION, TEXT_SECTION_HEADER } from "@/lib/design-tokens";
+import { CARD_SECTION, TEXT_SECTION_HEADER, TEXT_EMPTY, TEXT_META } from "@/lib/design-tokens";
 
 interface MomentumData {
   days: { date: string; topics: Record<string, number> }[];
@@ -64,7 +64,7 @@ export default function Momentum() {
               {data.days.map((d, i) => (
                 <div
                   key={d.date}
-                  className="flex-1 text-center font-mono text-xs text-text-faint"
+                  className={`flex-1 text-center ${TEXT_EMPTY}`}
                 >
                   {i % 7 === 0 ? d.date.slice(5) : ""}
                 </div>
@@ -74,7 +74,7 @@ export default function Momentum() {
             {/* Grid rows */}
             {activeTopics.map((topic) => (
               <div key={topic.key} className="flex items-center mb-0.5">
-                <span className="w-20 text-right pr-3 font-mono text-xs text-text-muted truncate shrink-0">
+                <span className={`w-20 text-right pr-3 truncate shrink-0 ${TEXT_EMPTY} text-text-muted`}>
                   {topic.label}
                 </span>
                 <div className="flex flex-1 gap-px">
@@ -91,11 +91,11 @@ export default function Momentum() {
 
             {/* Legend */}
             <div className="flex items-center gap-2 mt-3 ml-20">
-              <span className="font-mono text-xs text-text-faint">less</span>
+              <span className={TEXT_EMPTY}>less</span>
               <div className="w-3 h-3 rounded-sm bg-border/30" />
               <div className="w-3 h-3 rounded-sm bg-accent/30" />
               <div className="w-3 h-3 rounded-sm bg-accent/70" />
-              <span className="font-mono text-xs text-text-faint">more</span>
+              <span className={TEXT_EMPTY}>more</span>
             </div>
           </div>
         </div>
