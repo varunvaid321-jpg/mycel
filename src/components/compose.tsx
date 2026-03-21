@@ -104,9 +104,6 @@ export default function Compose({ onSaved }: ComposeProps) {
     el.style.height = el.scrollHeight + "px";
   }
 
-  // Display text = committed content + live interim in a different style
-  const displayValue = content + (interim ? (content ? " " : "") + interim : "");
-
   return (
     <div className="mb-8">
       <div
@@ -117,28 +114,25 @@ export default function Compose({ onSaved }: ComposeProps) {
         <div className="relative">
           <textarea
             ref={textareaRef}
-            value={listening ? displayValue : content}
+            value={content}
             onChange={(e) => {
-              if (!listening) {
-                setContent(e.target.value);
-                setError("");
-                autoResize(e.target);
-              }
+              setContent(e.target.value);
+              setError("");
+              autoResize(e.target);
             }}
             onKeyDown={handleKeyDown}
             placeholder={listening ? "listening..." : "type a thought, paste a link, or speak..."}
             rows={3}
-            readOnly={listening}
             className={`w-full bg-transparent text-lg leading-relaxed
               resize-none outline-none placeholder:italic font-serif
               ${listening ? "text-text-primary placeholder:text-signal" : "text-text-primary placeholder:text-text-faint"}`}
           />
-          {/* Interim text highlight overlay */}
+          {/* Live interim text shown below textarea */}
           {listening && interim && (
-            <div className="absolute bottom-0 right-0 mb-1 mr-1">
-              <span className="inline-flex items-center gap-1 font-mono text-[0.6rem] text-signal">
-                <span className="w-1.5 h-1.5 rounded-full bg-signal animate-pulse" />
-                hearing...
+            <div className="mt-1 px-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal animate-pulse shrink-0" />
+              <span className="text-sm text-text-muted italic truncate">
+                {interim}
               </span>
             </div>
           )}
@@ -172,7 +166,7 @@ export default function Compose({ onSaved }: ComposeProps) {
             />
             <button
               onClick={handleSave}
-              disabled={!content.trim() || saving || listening}
+              disabled={!content.trim() || saving}
               className="bg-transparent border border-accent text-accent rounded px-4 py-2.5 min-h-[44px]
                 font-mono text-[0.7rem] tracking-[0.15em] uppercase transition-all
                 hover:bg-accent hover:text-bg disabled:opacity-30 disabled:hover:bg-transparent
