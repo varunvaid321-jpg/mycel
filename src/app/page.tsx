@@ -10,6 +10,7 @@ import Momentum from "@/components/momentum";
 import Filters from "@/components/filters";
 import EntryFeed from "@/components/entry-feed";
 import Decisions from "@/components/decisions";
+import BackupAlert from "@/components/backup-alert";
 import {
   PAGE_CONTAINER,
   TEXT_TAGLINE,
@@ -147,6 +148,7 @@ export default function Home() {
             import memories
           </a>
           <br />
+          <BackupAlert />
           <span className={TEXT_FOOTER}>
             mycel &middot; private by default
           </span>
