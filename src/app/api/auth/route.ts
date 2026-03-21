@@ -1,37 +1,28 @@
 import { NextResponse } from "next/server";
 import { verifyPassphrase } from "@/lib/auth";
 
-// Allowed regions: Toronto area (ON, Canada) and Michigan (MI, USA)
-const ALLOWED_REGIONS = [
-  { country: "CA", region: "ON" },
-  { country: "US", region: "MI" },
-];
+// Allowed countries: Canada and USA
+// Cloudflare only reliably passes cf-ipcountry through proxy
+const ALLOWED_COUNTRIES = ["CA", "US"];
 
 const SECRET_ANSWER = "hannover";
 
 function isAllowedLocation(request: Request): {
   allowed: boolean;
   country: string;
-  region: string;
-  city: string;
 } {
-  const headers = request.headers;
-  const country = headers.get("cf-ipcountry") || headers.get("x-vercel-ip-country") || "";
-  const region = headers.get("cf-region") || headers.get("x-vercel-ip-country-region") || "";
-  const city = headers.get("cf-ipcity") || headers.get("x-vercel-ip-city") || "";
+  const country = request.headers.get("cf-ipcountry") || "";
 
   // In development, allow all
-  if (process.env.NODE_ENV !== "production") {
-    return { allowed: true, country: "DEV", region: "DEV", city: "localhost" };
+  if (process.env.NODE_ENV !== "production" || !country) {
+    return { allowed: true, country: country || "DEV" };
   }
 
-  const allowed = ALLOWED_REGIONS.some(
-    (r) =>
-      r.country.toLowerCase() === country.toLowerCase() &&
-      r.region.toLowerCase() === region.toLowerCase()
+  const allowed = ALLOWED_COUNTRIES.some(
+    (c) => c.toLowerCase() === country.toLowerCase()
   );
 
-  return { allowed, country, region, city };
+  return { allowed, country };
 }
 
 export async function POST(request: Request) {
@@ -46,21 +37,17 @@ export async function POST(request: Request) {
   const geo = isAllowedLocation(request);
 
   if (!geo.allowed) {
-    // Passphrase correct but location is suspicious
     if (!secretAnswer) {
-      // Ask for secret question
       return NextResponse.json(
         {
           error: "location_challenge",
-          message: "Unusual login location detected.",
           question: "What was the name of the city in Germany you lived in?",
-          location: `${geo.city}, ${geo.region}, ${geo.country}`,
+          location: geo.country,
         },
         { status: 403 }
       );
     }
 
-    // Verify secret answer
     if (secretAnswer.toLowerCase().trim() !== SECRET_ANSWER) {
       return NextResponse.json(
         { error: "invalid_answer", message: "Wrong answer." },
