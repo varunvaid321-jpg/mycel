@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// Cloudflare Workers AI — free 10k requests/day
+// Uses @cf/meta/llama-3.1-8b-instruct (fast, free)
 
 interface Entry {
   id: string;
@@ -34,22 +35,49 @@ export interface VideoAnalysis {
   relevantTopics: string[];
 }
 
-// ── Gemini client ────────────────────────────────────────────
-
-function getModel() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+export interface WebAnalysis {
+  title: string;
+  summary: string;
+  keyTakeaways: string[];
+  actionItems: string[];
+  relevantTopics: string[];
 }
 
+export interface GuideResponse {
+  message: string;
+  type: "insight" | "action" | "reflection" | "silent";
+  intensity: "gentle" | "warm" | "direct";
+}
+
+// ── Cloudflare Workers AI client ─────────────────────────────
+
 async function ask(prompt: string): Promise<string | null> {
-  const model = getModel();
-  if (!model) return null;
+  const accountId = process.env.CF_ACCOUNT_ID;
+  const apiKey = process.env.CF_AI_API_KEY;
+  if (!accountId || !apiKey) return null;
 
   try {
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: "You are a helpful assistant. Always respond with valid JSON when asked for JSON. No markdown formatting." },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 1500,
+        }),
+      }
+    );
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.result?.response || null;
   } catch {
     return null;
   }
@@ -58,10 +86,10 @@ async function ask(prompt: string): Promise<string | null> {
 function extractJSON(text: string): string {
   // Strip markdown code fences if present
   const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-  return cleaned;
+  // Try to find JSON object in the text
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  return jsonMatch ? jsonMatch[0] : cleaned;
 }
-
-// ── Helpers ──────────────────────────────────────────────────
 
 function formatEntries(entries: Entry[]): string {
   return entries
@@ -74,62 +102,26 @@ function formatEntries(entries: Entry[]): string {
 
 // ── Intelligent Guide ────────────────────────────────────────
 
-export interface GuideResponse {
-  message: string;
-  type: "insight" | "action" | "reflection" | "silent";
-  intensity: "gentle" | "warm" | "direct";
-}
-
 export async function generateGuide(
   entries: Entry[]
 ): Promise<GuideResponse | null> {
   if (entries.length < 2) return null;
 
-  const formatted = formatEntries(entries);
-
-  // Separate content types for context
-  const signals = entries.filter((e) => e.category === "signal");
-  const fruits = entries.filter((e) => e.category === "fruit");
-  const decompose = entries.filter((e) => e.category === "decompose");
-  const analyzed = entries.filter((e) => e.content.includes("📺") || e.content.includes("🔗"));
+  const formatted = formatEntries(entries.slice(0, 20));
 
   const result = await ask(
-    `You are a thoughtful personal guide — like a wise friend who knows someone deeply. You've been reading this person's private journal. Your job: say ONE thing that matters right now.
+    `You are a thoughtful personal guide reading someone's private journal.
 
-Here are their recent journal entries (newest first). Categories: spore=quick thought, root=deep reflection, signal=reminder to self, decompose=letting go, fruit=action/decision. Some entries are analyzed videos/articles they consumed.
-
+Entries:
 ${formatted}
 
-Context:
-- ${signals.length} active reminders/signals
-- ${fruits.length} actions/decisions made
-- ${decompose.length} things they're trying to let go
-- ${analyzed.length} videos/articles they consumed and found valuable
+Say ONE thing that matters right now. Return JSON:
+{"message": "one sentence max 25 words", "type": "insight|action|reflection|silent", "intensity": "gentle|warm|direct"}
 
-Rules for your response:
-1. Return a JSON object with exactly these keys:
-   - "message": ONE sentence (max 25 words). No greeting, no filler. Just the insight, nudge, or reflection.
-   - "type": one of "insight" (pattern you noticed), "action" (something they should do), "reflection" (something to sit with), or "silent" (nothing worth saying right now — use this if entries are calm and resolved)
-   - "intensity": "gentle" (things are okay, soft observation), "warm" (encouraging, building momentum), "direct" (something important they keep avoiding)
-
-2. What to say:
-   - If you see recurring themes without resolution → gently name it
-   - If they committed to something but haven't followed through → remind warmly
-   - If emotions are running high → offer perspective, not solutions
-   - If they consumed content (videos/articles) → weave that wisdom into guidance naturally
-   - If things seem calm and resolved → return type "silent"
-   - If they're avoiding a conversation or decision → name it directly but kindly
-   - If there's a pattern across their consumed content → reflect what they seem to be seeking
-
-3. Tone: Like a wise friend who speaks rarely but always says the right thing. Never preachy. Never generic. Reference their specific words/situations.
-
-4. NEVER use their name. NEVER say "you should". Prefer "maybe it's time to..." or "that thing about..." or questions.
-
-Return ONLY valid JSON, no markdown.`
+Rules: If recurring theme without resolution, name it. If they committed to something, remind warmly. If calm, return type "silent". Never preachy. Reference their specific words.`
   );
 
   if (!result) return null;
-
   try {
     return JSON.parse(extractJSON(result)) as GuideResponse;
   } catch {
@@ -141,15 +133,8 @@ Return ONLY valid JSON, no markdown.`
 
 export async function autoCorrect(rawText: string): Promise<string> {
   const result = await ask(
-    `Fix all spelling, grammar, and typo errors in this text. Keep the original meaning, tone, and style exactly the same. Do not add punctuation that wasn't intended. Do not make it more formal. Do not add or remove ideas. Just clean up the language so it reads clearly.
-
-If the text is already clean, return it unchanged.
-
-Return ONLY the corrected text, nothing else. No quotes, no explanation.
-
-Text: ${rawText}`
+    `Fix spelling, grammar, and typos. Keep original meaning and tone. Return ONLY the corrected text, nothing else.\n\nText: ${rawText}`
   );
-
   return result?.trim() || rawText;
 }
 
@@ -160,25 +145,24 @@ export async function generateWeeklyBrief(
 ): Promise<AIWeeklyBrief | null> {
   if (entries.length === 0) return null;
 
-  const formatted = formatEntries(entries);
+  const formatted = formatEntries(entries.slice(0, 30));
 
   const result = await ask(
-    `You are analyzing a personal journal. Here are the entries from the past 7 days. Each entry has a category: spore (quick thought), root (deep reflection), signal (reminder/rule), decompose (letting go), fruit (action/decision).
+    `Analyze these personal journal entries from the past 7 days. Categories: spore=thought, root=reflection, signal=reminder, decompose=letting go, fruit=action.
 
 ${formatted}
 
-Analyze these entries and return a JSON object with exactly these keys:
-- "patterns": array of 2-4 strings describing patterns across the thoughts
-- "ripeDecisions": array of 1-3 strings describing decisions that seem ready to be made (mentioned repeatedly, emotionally loaded)
-- "conversationsToHave": array of 1-3 strings about conversations being avoided or needed
-- "thingsToLetGo": array of 1-3 strings about things worth releasing
-- "prioritizedActions": array of exactly 3 strings — concrete actions prioritized for the week
+Return JSON with these keys:
+- "patterns": array of 2-4 pattern strings
+- "ripeDecisions": array of 1-3 decisions ready to be made
+- "conversationsToHave": array of 1-3 conversations needed
+- "thingsToLetGo": array of 1-3 things to release
+- "prioritizedActions": array of exactly 3 concrete actions for the week
 
-Be concise, direct, and insightful. Each string should be 1-2 sentences max. Return ONLY valid JSON, no markdown.`
+Each string 1-2 sentences max. Be concise and insightful.`
   );
 
   if (!result) return null;
-
   try {
     return JSON.parse(extractJSON(result)) as AIWeeklyBrief;
   } catch {
@@ -193,27 +177,19 @@ export async function analyzeVideoTranscript(
   videoTitle: string,
   userNote?: string
 ): Promise<VideoAnalysis | null> {
-  const trimmed = transcript.slice(0, 12000);
+  const trimmed = transcript.slice(0, 8000);
 
   const result = await ask(
-    `Analyze this YouTube video transcript and extract what's personally useful and actionable.${userNote ? `\n\nThe user's intent: "${userNote}"` : ""}
+    `Analyze this video transcript. Extract what's useful and actionable.${userNote ? ` User's intent: "${userNote}"` : ""}
 
-Video title: ${videoTitle}
+Title: ${videoTitle}
+Transcript: ${trimmed}
 
-Transcript:
-${trimmed}
-
-${userNote ? `Focus your analysis through the lens of the user's intent: "${userNote}". Tailor takeaways and actions to serve that purpose.\n\n` : ""}Return a JSON object with exactly these keys:
-- "summary": 2-3 sentence summary of the core message
-- "keyTakeaways": array of 3-5 strings — the most valuable insights
-- "actionItems": array of 1-3 strings — concrete things I could do based on this
-- "relevantTopics": array of 1-4 strings from this list ONLY: health, money, retirement, housing, family, career, relationships, growth, creativity, travel
-
-Be direct and practical. Focus on what's actionable, not just interesting. Return ONLY valid JSON, no markdown.`
+Return JSON:
+{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`
   );
 
   if (!result) return null;
-
   try {
     return { title: videoTitle, ...JSON.parse(extractJSON(result)) } as VideoAnalysis;
   } catch {
@@ -221,15 +197,7 @@ Be direct and practical. Focus on what's actionable, not just interesting. Retur
   }
 }
 
-// ── Monthly Review ───────────────────────────────────────────
-
-export interface WebAnalysis {
-  title: string;
-  summary: string;
-  keyTakeaways: string[];
-  actionItems: string[];
-  relevantTopics: string[];
-}
+// ── Web Analysis ─────────────────────────────────────────────
 
 export async function analyzeWebContent(
   text: string,
@@ -237,28 +205,19 @@ export async function analyzeWebContent(
   siteName: string,
   userNote?: string
 ): Promise<WebAnalysis | null> {
-  const trimmed = text.slice(0, 12000);
+  const trimmed = text.slice(0, 8000);
 
   const result = await ask(
-    `Analyze this web page content and extract what's personally useful and actionable.${userNote ? `\n\nThe user's intent: "${userNote}"` : ""}
+    `Analyze this web page. Extract what's useful and actionable.${userNote ? ` User's intent: "${userNote}"` : ""}
 
-Page title: ${title}
-Source: ${siteName}
+Title: ${title} (${siteName})
+Content: ${trimmed}
 
-Content:
-${trimmed}
-
-${userNote ? `Focus your analysis through the lens of the user's intent: "${userNote}". Tailor takeaways and actions to serve that purpose.\n\n` : ""}Return a JSON object with exactly these keys:
-- "summary": 2-3 sentence summary of the core message
-- "keyTakeaways": array of 3-5 strings — the most valuable insights
-- "actionItems": array of 1-3 strings — concrete things I could do based on this
-- "relevantTopics": array of 1-4 strings from this list ONLY: health, money, retirement, housing, family, career, relationships, growth, creativity, travel
-
-Be direct and practical. Focus on what's actionable, not just interesting. Return ONLY valid JSON, no markdown.`
+Return JSON:
+{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`
   );
 
   if (!result) return null;
-
   try {
     return { title, ...JSON.parse(extractJSON(result)) } as WebAnalysis;
   } catch {
@@ -266,30 +225,25 @@ Be direct and practical. Focus on what's actionable, not just interesting. Retur
   }
 }
 
+// ── Monthly Review ───────────────────────────────────────────
+
 export async function generateMonthlyReview(
   entries: Entry[]
 ): Promise<AIMonthlyReview | null> {
   if (entries.length === 0) return null;
 
-  const formatted = formatEntries(entries);
+  const formatted = formatEntries(entries.slice(0, 40));
 
   const result = await ask(
-    `You are analyzing a personal journal. Here are entries from the past 30 days. Categories: spore (thought), root (reflection), signal (reminder), decompose (letting go), fruit (action/decision). Tags indicate life topics.
+    `Analyze these journal entries from the past 30 days.
 
 ${formatted}
 
-Analyze and return a JSON object with exactly these keys:
-- "topFocusAreas": array of objects {topic: string, count: number} — top 5 life areas by attention
-- "keyDecisions": array of 2-5 strings — major decisions/actions taken (fruit entries)
-- "circlingThemes": array of 2-4 strings — repeated themes without resolution
-- "shiftedTopics": array of 1-3 strings — topics that appeared then stopped
-- "reflection": a single paragraph (3-5 sentences) reflecting on the month's journey
-
-Be concise and insightful. Return ONLY valid JSON, no markdown.`
+Return JSON:
+{"topFocusAreas": [{"topic":"string","count":0}], "keyDecisions": ["strings"], "circlingThemes": ["unresolved themes"], "shiftedTopics": ["topics that stopped"], "reflection": "one paragraph reflection"}`
   );
 
   if (!result) return null;
-
   try {
     return JSON.parse(extractJSON(result)) as AIMonthlyReview;
   } catch {
