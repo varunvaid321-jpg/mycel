@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import MicButton from "./mic-button";
+import { detectEmotion } from "@/lib/emotional-detect";
 
 interface ComposeProps {
   onSaved: () => void;
@@ -19,6 +20,7 @@ export default function Compose({ onSaved }: ComposeProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const hasUrl = URL_REGEX.test(content.trim());
+  const emotion = useMemo(() => detectEmotion(content), [content]);
 
   const handleTranscript = useCallback((text: string) => {
     setContent((prev) => (prev ? prev + " " + text : text));
@@ -137,6 +139,16 @@ export default function Compose({ onSaved }: ComposeProps) {
             </div>
           )}
         </div>
+
+        {/* Emotional guidance — instant, before save */}
+        {emotion.detected && (
+          <div className="mt-3 px-3 py-2.5 rounded-md bg-signal/10 border border-signal/20 animate-fade-in">
+            <p className="text-sm text-text-primary leading-relaxed">
+              <span className="text-signal font-mono text-xs mr-2">&#9679;</span>
+              {emotion.guidance}
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-3 pt-3 border-t border-border">
           <p className="font-mono text-[0.6rem] text-text-faint tracking-wide">
