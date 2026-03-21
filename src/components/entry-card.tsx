@@ -21,11 +21,11 @@ interface EntryCardProps {
 }
 
 const tagStyles: Record<string, string> = {
-  spore: "bg-spore/10 text-spore",
-  root: "bg-root/10 text-root",
-  signal: "bg-signal/10 text-signal",
-  decompose: "bg-decompose/10 text-decompose",
-  fruit: "bg-fruit/10 text-fruit",
+  spore: "bg-spore/15 text-spore",
+  root: "bg-root/15 text-root",
+  signal: "bg-signal/15 text-signal",
+  decompose: "bg-decompose/15 text-decompose",
+  fruit: "bg-fruit/15 text-fruit",
 };
 
 function HighlightedText({ text, term }: { text: string; term?: string }) {
@@ -38,7 +38,7 @@ function HighlightedText({ text, term }: { text: string; term?: string }) {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-accent/20 text-text-primary rounded px-0.5">
+          <mark key={i} className="bg-accent/30 text-text-primary rounded px-0.5">
             {part}
           </mark>
         ) : (
