@@ -69,16 +69,20 @@ node server.js
 - Schema: `prisma/schema.prisma` (SQLite)
 - After schema changes: run `npx prisma generate` locally
 - On Render: `server.js` runs `prisma db push --accept-data-loss` on startup
-- Entry model fields: id, content, category, localDate, localTime, createdAt, updatedAt, isPublic, archived, tags, linkedEntryIds
+- Entry model fields: id, content, category, localDate, localTime, createdAt, updatedAt, isPublic, archived, tags, linkedEntryIds, imagePath
 
 ### AI (Cloudflare Workers AI)
 - Env vars: `CF_ACCOUNT_ID` + `CF_AI_API_KEY`
 - Model: `@cf/meta/llama-3.1-8b-instruct`
 - All AI functions in `src/lib/ai.ts` — ask() is the single call point
+- 3x retry on all AI calls before giving up
+- Every call tagged with caller: [AI:guide], [AI:weekly], [AI:autocorrect], etc.
 - Always return null on failure — never crash, always fall back gracefully
-- Auto-correct uses AI on every save (cleans typos/grammar)
+- Auto-correct uses AI on every save (skips text <10 chars)
+- Weekly brief cached server-side (5min TTL, invalidates on new entry count)
 - Weekly/monthly briefs, guide, video/web analysis all use AI
-- Prompts must ask for JSON and use extractJSON() to parse (strips markdown fences)
+- All prompts address journal owner as "you/your" — never "the user" or "they"
+- Prompts must ask for JSON and use parseJSON() to parse (logs failures with raw response)
 
 ### Emotional detector
 - Pure client-side, no API call — `src/lib/emotional-detect.ts`
@@ -103,6 +107,7 @@ node server.js
 
 ### Security
 - Passphrase auth via env var `MYCEL_PASSPHRASE`
+- Screen lock PIN via env var `MYCEL_PIN` — locks on tab switch + 5min idle, 4-digit PIN to unlock, 3 wrong = 5min lockout
 - Geo-check: allows CA + US countries (via `cf-ipcountry` header)
 - Outside CA/US: secret question challenge ("hannover")
 - Session: httpOnly cookie, 30-day expiry
@@ -123,6 +128,7 @@ node server.js
 ```
 DATABASE_URL=file:/data/mycel.db
 MYCEL_PASSPHRASE=***
+MYCEL_PIN=***
 NODE_ENV=production
 CF_ACCOUNT_ID=e03e2882012ddf881ecf0753cf8a7c92
 CF_AI_API_KEY=***
@@ -135,18 +141,40 @@ NEVER change env vars without explicit authorization.
 - Filter pills wrap naturally
 - No horizontal overflow anywhere
 
+### Photo uploads
+- Compose box has camera button — opens camera on mobile, file picker on desktop
+- Images stored on persistent disk at `/data/images/{entryId}.{ext}`
+- Served via `/api/images/[id]` with content-type detection
+- Max 10MB per image, supports jpg/png/webp/gif/heic
+- Entry card shows thumbnail — click for full-screen lightbox
+- Photo-only entries (no text) save with camera emoji placeholder
+- `next.config.mjs` has 12mb body size limit for uploads
+
+### Design tokens
+- `src/lib/design-tokens.ts` — single source of truth for all UI classes
+- 55 tokens covering: cards, buttons, inputs, tags, typography, layout, alerts, compose, status, mic
+- Three input tokens: `INPUT_TEXT` (compact inline), `INPUT_PASSWORD` (paired with button), `INPUT_STANDALONE` (full-page forms)
+- Every component imports from design-tokens — no raw Tailwind duplication
+- New tokens must be consumed by at least one component — no dead tokens
+
 ### Key files
 - `server.js` — production entry point (prisma push + Next.js)
 - `src/lib/ai.ts` — all AI functions (Cloudflare Workers AI)
+- `src/lib/design-tokens.ts` — centralized Tailwind class tokens
 - `src/lib/classifier.ts` — auto-categorize + auto-tag
 - `src/lib/emotional-detect.ts` — real-time emotion detection
 - `src/lib/youtube.ts` — YouTube transcript + metadata
 - `src/lib/web-extract.ts` — web page content extraction
 - `src/app/api/analyze/route.ts` — universal URL analyzer
+- `src/app/api/entries/route.ts` — CRUD + multipart image upload
+- `src/app/api/images/[id]/route.ts` — image serving from disk
 - `src/app/api/guide/route.ts` — intelligent AI guide
-- `src/app/api/weekly/route.ts` — weekly brief (AI + fallback)
+- `src/app/api/weekly/route.ts` — weekly brief (AI + fallback + cache)
 - `src/app/api/monthly/route.ts` — monthly review
-- `src/components/compose.tsx` — main input (typing, voice, URL detection, emotional detector)
+- `src/app/api/verify-pin/route.ts` — screen lock PIN verification
+- `src/components/compose.tsx` — main input (typing, voice, photo, URL detection, emotional detector)
+- `src/components/screen-lock.tsx` — PIN overlay on tab switch + idle
+- `src/components/lightbox.tsx` — full-screen image viewer
 - `src/components/daily-nudge.tsx` — intelligent guide display
 - `src/components/weekly-summary.tsx` — weekly brief panel
 - `.github/workflows/deploy.yml` — auto-deploy to Render
