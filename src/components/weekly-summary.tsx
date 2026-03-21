@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  CARD_SECTION,
+  BORDER_NETWORK,
+  TEXT_SECTION_HEADER,
+  TEXT_SUBSECTION_HEADER,
+  TEXT_BULLET,
+  TAG_THEME,
+} from "@/lib/design-tokens";
 
 interface AIBrief {
   patterns: string[];
@@ -41,13 +49,13 @@ export default function WeeklySummary() {
   const ai = data.aiBrief;
 
   return (
-    <div className="bg-surface border border-border border-l-[3px] border-l-network rounded-lg p-5 md:p-6 mb-8 animate-fade-in">
+    <div className={`${CARD_SECTION} ${BORDER_NETWORK}`}>
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center gap-2 mb-4"
       >
         <span className="w-2 h-2 rounded-full bg-network animate-pulse-dot" />
-        <span className="font-mono text-sm tracking-[0.2em] uppercase text-network">
+        <span className={`${TEXT_SECTION_HEADER} text-network`}>
           The Network &middot; Weekly Brief
         </span>
         <span className="ml-auto font-mono text-sm text-text-faint">
@@ -110,7 +118,7 @@ export default function WeeklySummary() {
               {ai.prioritizedActions.length > 0 && (
                 <Section title="This Week&apos;s Actions">
                   {ai.prioritizedActions.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                    <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
                       <span className="text-accent font-mono text-xs mt-0.5 shrink-0">
                         {i + 1}.
                       </span>
@@ -129,15 +137,12 @@ export default function WeeklySummary() {
               {/* Fallback: rule-based */}
               {data.themes.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Themes This Week
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {data.themes.map((t) => (
-                      <span
-                        key={t.word}
-                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-sm"
-                      >
+                      <span key={t.word} className={TAG_THEME}>
                         {t.word}
                         <span className="ml-1 text-text-faint">{t.count}</span>
                       </span>
@@ -201,7 +206,7 @@ function BulletItem({ icon, color, text }: { icon: string; color: string; text: 
   const hasMore = firstSentence.length < text.length;
 
   return (
-    <li className="flex items-start gap-2 text-sm leading-relaxed">
+    <li className={`flex items-start gap-2 ${TEXT_BULLET}`}>
       <span
         className={`${color} font-mono text-xs mt-0.5 shrink-0`}
         dangerouslySetInnerHTML={{ __html: icon }}

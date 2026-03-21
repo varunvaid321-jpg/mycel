@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  INPUT_PASSWORD,
+  BTN_ACCENT_SOLID,
+  ALERT_SIGNAL_STRONG,
+} from "@/lib/design-tokens";
 
 export default function LoginPage() {
   const [passphrase, setPassphrase] = useState("");
@@ -84,17 +89,12 @@ export default function LoginPage() {
                 onChange={(e) => setPassphrase(e.target.value)}
                 placeholder="enter passphrase"
                 autoFocus
-                className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
-                  font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
-                  outline-none transition-colors focus:border-accent
-                  ${error ? "border-signal" : ""}`}
+                className={`${INPUT_PASSWORD} ${error ? "border-signal" : ""}`}
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
-                  text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
-                  disabled:opacity-50"
+                className={`${BTN_ACCENT_SOLID} rounded-l-none rounded-r sm:text-xs`}
               >
                 {loading ? "..." : "enter"}
               </button>
@@ -102,7 +102,7 @@ export default function LoginPage() {
           ) : (
             /* Security challenge */
             <div className="space-y-4">
-              <div className="bg-signal/10 border border-signal/30 rounded-lg px-4 py-3">
+              <div className={ALERT_SIGNAL_STRONG}>
                 <p className="font-mono text-sm text-signal tracking-wider uppercase mb-1">
                   security check
                 </p>
@@ -123,17 +123,12 @@ export default function LoginPage() {
                   placeholder="your answer"
                   autoFocus
                   autoComplete="off"
-                  className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
-                    font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
-                    outline-none transition-colors focus:border-accent
-                    ${error ? "border-signal" : ""}`}
+                  className={`${INPUT_PASSWORD} ${error ? "border-signal" : ""}`}
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
-                    text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
-                    disabled:opacity-50"
+                  className={`${BTN_ACCENT_SOLID} rounded-l-none rounded-r sm:text-xs`}
                 >
                   {loading ? "..." : "verify"}
                 </button>

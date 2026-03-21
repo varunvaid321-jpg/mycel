@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CARD_SECTION, TEXT_SECTION_HEADER } from "@/lib/design-tokens";
 
 interface MomentumData {
   days: { date: string; topics: Record<string, number> }[];
@@ -34,12 +35,12 @@ export default function Momentum() {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-5 md:p-6 mb-8 animate-fade-in">
+    <div className={CARD_SECTION}>
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center gap-2"
       >
-        <span className="font-mono text-sm tracking-[0.2em] uppercase text-accent/80">
+        <span className={`${TEXT_SECTION_HEADER} text-accent/80`}>
           Momentum &middot; 30 Days
         </span>
         <svg
