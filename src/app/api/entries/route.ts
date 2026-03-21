@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { classify } from "@/lib/classifier";
 import { autoCorrect } from "@/lib/ai";
+import { writeFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+
+const IMAGE_DIR = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,7 +22,7 @@ export async function GET(request: Request) {
   }
 
   // For search, we'll filter after fetch since SQLite doesn't support case-insensitive contains
-  let searchTerm = search?.toLowerCase() || "";
+  const searchTerm = search?.toLowerCase() || "";
 
   // Topic filtering via tags field (comma-separated)
   if (topic && topic !== "all") {
@@ -61,22 +65,40 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { content, localDate, localTime } = body;
+  const contentType = request.headers.get("content-type") || "";
 
-  if (!content?.trim()) {
-    return NextResponse.json({ error: "content required" }, { status: 400 });
+  let content: string;
+  let localDate: string;
+  let localTime: string;
+  let imageFile: File | null = null;
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    content = (formData.get("content") as string) || "";
+    localDate = (formData.get("localDate") as string) || "";
+    localTime = (formData.get("localTime") as string) || "";
+    imageFile = formData.get("image") as File | null;
+  } else {
+    const body = await request.json();
+    content = body.content || "";
+    localDate = body.localDate || "";
+    localTime = body.localTime || "";
   }
 
-  // Auto-correct typos and bad grammar
-  const corrected = await autoCorrect(content.trim());
+  // Allow empty content if there's an image
+  if (!content?.trim() && !imageFile) {
+    return NextResponse.json({ error: "content or image required" }, { status: 400 });
+  }
+
+  // Auto-correct typos and bad grammar (only if there's text)
+  const corrected = content.trim() ? await autoCorrect(content.trim()) : "";
 
   // Auto-classify (on corrected text for better accuracy)
-  const { category, topics } = classify(corrected);
+  const { category, topics } = corrected ? classify(corrected) : { category: "spore", topics: [] as string[] };
 
   // Auto-link: if fruit, find related recent spores/signals by keyword overlap
   let linkedEntryIds = "";
-  if (category === "fruit") {
+  if (category === "fruit" && corrected) {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 14);
     const recent = await prisma.entry.findMany({
@@ -117,7 +139,7 @@ export async function POST(request: Request) {
 
   const entry = await prisma.entry.create({
     data: {
-      content: corrected,
+      content: corrected || (imageFile ? "📷" : ""),
       category,
       tags: topics.join(","),
       localDate,
@@ -125,6 +147,34 @@ export async function POST(request: Request) {
       linkedEntryIds,
     },
   });
+
+  // Save image if provided
+  if (imageFile && imageFile.size > 0) {
+    try {
+      if (!existsSync(IMAGE_DIR)) {
+        await mkdir(IMAGE_DIR, { recursive: true });
+      }
+
+      const ext = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "heic"].includes(ext) ? ext : "jpg";
+      const filePath = `${IMAGE_DIR}/${entry.id}.${safeExt}`;
+
+      const buffer = Buffer.from(await imageFile.arrayBuffer());
+      await writeFile(filePath, buffer);
+
+      // Update entry with image path
+      await prisma.entry.update({
+        where: { id: entry.id },
+        data: { imagePath: `${entry.id}.${safeExt}` },
+      });
+
+      const updated = await prisma.entry.findUnique({ where: { id: entry.id } });
+      return NextResponse.json(updated, { status: 201 });
+    } catch (err) {
+      console.error("[upload] Failed to save image:", err instanceof Error ? err.message : err);
+      // Entry saved without image — don't fail the whole request
+    }
+  }
 
   return NextResponse.json(entry, { status: 201 });
 }

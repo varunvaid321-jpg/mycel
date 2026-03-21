@@ -19,4 +19,5 @@ model Entry {
   archived  Boolean  @default(false)
   tags           String   @default("")
   linkedEntryIds String   @default("")
+  imagePath      String   @default("")
 }
