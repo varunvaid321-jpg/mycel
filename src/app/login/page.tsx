@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   INPUT_PASSWORD,
+  INPUT_TEXT,
   BTN_ACCENT_SOLID,
   ALERT_SIGNAL_STRONG,
   TEXT_STATUS_SIGNAL,
@@ -112,18 +113,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
+    <div className="min-h-screen flex flex-col items-center relative">
+      <div className="fixed inset-0 opacity-[0.06] pointer-events-none">
         <div className="absolute w-[600px] h-[400px] left-[10%] top-[40%] bg-accent rounded-full blur-[150px]" />
         <div className="absolute w-[400px] h-[500px] right-[10%] top-[20%] bg-network rounded-full blur-[150px]" />
       </div>
 
-      <div className="text-center z-10 px-6 w-full max-w-[400px]">
-        <div className={`${locked ? "text-4xl mb-3" : "text-6xl mb-6"} opacity-60`}>&#x1F344;</div>
-        <h1 className={`${locked ? "text-3xl" : "text-5xl md:text-6xl"} font-normal tracking-[0.12em] lowercase text-accent mb-2`}>
+      <div className={`text-center z-10 px-6 w-full max-w-[400px] ${locked ? "pt-12" : "flex-1 flex flex-col justify-center"}`}>
+        {!locked && <div className="text-6xl mb-6 opacity-60">&#x1F344;</div>}
+        <h1 className={`${locked ? "text-2xl mt-2" : "text-5xl md:text-6xl"} font-normal tracking-[0.12em] lowercase text-accent mb-2`}>
           mycel
         </h1>
-        <p className={`${TEXT_TAGLINE} text-base tracking-wide ${locked ? "mb-6" : "mb-12"}`}>
+        <p className={`${TEXT_TAGLINE} text-base tracking-wide ${locked ? "mb-4" : "mb-12"}`}>
           Ideas spread quietly.
         </p>
 
@@ -153,7 +154,7 @@ export default function LoginPage() {
                     setRecoveryAnswers(updated);
                   }}
                   autoComplete="off"
-                  className={`w-full ${INPUT_PASSWORD} rounded border-r`}
+                  className={`w-full ${INPUT_TEXT} text-base sm:text-sm rounded-lg px-4 py-3`}
                 />
               </div>
             ))}
@@ -238,7 +239,7 @@ export default function LoginPage() {
         )}
       </div>
 
-      <div className={`mt-auto pb-8 pt-12 ${TEXT_FOOTER}`}>
+      <div className={`pb-8 pt-8 ${TEXT_FOOTER}`}>
         no names &middot; no traces &middot; just growth
       </div>
     </div>
