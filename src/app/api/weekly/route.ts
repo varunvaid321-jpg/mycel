@@ -30,17 +30,17 @@ export async function GET() {
   const reminders = entries
     .filter((e) => e.category === "signal")
     .slice(0, 5)
-    .map((e) => e.content.slice(0, 120));
+    .map((e) => e.content);
 
   const actions = entries
     .filter((e) => e.category === "fruit")
     .slice(0, 5)
-    .map((e) => e.content.slice(0, 120));
+    .map((e) => e.content);
 
   const letting_go = entries
     .filter((e) => e.category === "decompose")
     .slice(0, 3)
-    .map((e) => e.content.slice(0, 120));
+    .map((e) => e.content);
 
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",

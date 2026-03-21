@@ -193,13 +193,30 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function BulletItem({ icon, color, text }: { icon: string; color: string; text: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Get first complete sentence
+  const sentenceEnd = text.search(/[.!?]\s|[.!?]$/);
+  const firstSentence = sentenceEnd > 0 ? text.slice(0, sentenceEnd + 1) : text;
+  const hasMore = firstSentence.length < text.length;
+
   return (
     <li className="flex items-start gap-2 text-sm leading-relaxed">
       <span
         className={`${color} font-mono text-xs mt-0.5 shrink-0`}
         dangerouslySetInnerHTML={{ __html: icon }}
       />
-      <span>{text}</span>
+      <span>
+        {expanded || !hasMore ? text : firstSentence}
+        {hasMore && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="ml-1 font-mono text-[0.6rem] text-text-faint hover:text-accent transition-colors"
+          >
+            {expanded ? "less" : "more"}
+          </button>
+        )}
+      </span>
     </li>
   );
 }
