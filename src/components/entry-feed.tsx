@@ -75,7 +75,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
         <EntryCard key={entry.id} entry={entry} onDelete={handleDelete} searchTerm={search} />
       ))}
       {entries.length < total && (
-        <p className="text-center font-mono text-[0.65rem] text-text-faint tracking-wider pt-4">
+        <p className="text-center font-mono text-sm text-text-faint tracking-wider pt-4">
           showing {entries.length} of {total}
         </p>
       )}

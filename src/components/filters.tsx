@@ -38,12 +38,12 @@ export default function Filters({
     <div className="mb-5 pb-4 border-b border-border space-y-3">
       {/* Type filter row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-[0.6rem] tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
+        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
           type
         </span>
         <button
           onClick={() => onCategoryChange("all")}
-          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
             border transition-all
             ${activeCategory === "all" ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
         >
@@ -53,7 +53,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onCategoryChange(key)}
-            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
               border transition-all
               ${activeCategory === key ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
           >
@@ -64,12 +64,12 @@ export default function Filters({
 
       {/* Topic filter row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-[0.6rem] tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
+        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
           life
         </span>
         <button
           onClick={() => onTopicChange("all")}
-          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
             border transition-all
             ${activeTopic === "all" ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
         >
@@ -79,7 +79,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onTopicChange(key)}
-            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
               border transition-all
               ${activeTopic === key ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
           >
@@ -105,7 +105,7 @@ export default function Filters({
         <button
           onClick={submitSearch}
           className="px-4 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-surface border border-accent/40 text-accent rounded
-            font-mono text-[0.65rem] tracking-wider uppercase transition-all
+            font-mono text-sm tracking-wider uppercase transition-all
             hover:bg-accent hover:text-bg"
         >
           go
@@ -113,7 +113,7 @@ export default function Filters({
         {search && (
           <button
             onClick={clearSearch}
-            className="px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 font-mono text-[0.65rem] text-text-faint hover:text-signal transition-colors"
+            className="px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 font-mono text-sm text-text-faint hover:text-signal transition-colors"
           >
             clear
           </button>

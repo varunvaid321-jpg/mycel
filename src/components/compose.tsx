@@ -151,7 +151,7 @@ export default function Compose({ onSaved }: ComposeProps) {
         )}
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-3 pt-3 border-t border-border">
-          <p className="font-mono text-[0.6rem] text-text-faint tracking-wide">
+          <p className="font-mono text-sm text-text-faint tracking-wide">
             {listening ? (
               <span className="text-signal flex items-center gap-1.5">
                 <span className="flex gap-0.5">
@@ -180,7 +180,7 @@ export default function Compose({ onSaved }: ComposeProps) {
               onClick={handleSave}
               disabled={!content.trim() || saving}
               className="bg-transparent border border-accent text-accent rounded px-4 py-2.5 min-h-[44px]
-                font-mono text-[0.7rem] tracking-[0.15em] uppercase transition-all
+                font-mono text-sm tracking-[0.15em] uppercase transition-all
                 hover:bg-accent hover:text-bg disabled:opacity-30 disabled:hover:bg-transparent
                 disabled:hover:text-accent"
             >
@@ -206,7 +206,7 @@ export default function Compose({ onSaved }: ComposeProps) {
         </div>
       )}
 
-      <p className="mt-2 text-right font-mono text-[0.6rem] text-text-faint tracking-wide">
+      <p className="mt-2 text-right font-mono text-sm text-text-faint tracking-wide">
         &#8984;+enter to save
       </p>
     </div>

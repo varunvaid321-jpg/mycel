@@ -47,10 +47,10 @@ export default function WeeklySummary() {
         className="w-full flex items-center gap-2 mb-4"
       >
         <span className="w-2 h-2 rounded-full bg-network animate-pulse-dot" />
-        <span className="font-mono text-[0.7rem] tracking-[0.2em] uppercase text-network">
+        <span className="font-mono text-sm tracking-[0.2em] uppercase text-network">
           The Network &middot; Weekly Brief
         </span>
-        <span className="ml-auto font-mono text-[0.6rem] text-text-faint">
+        <span className="ml-auto font-mono text-sm text-text-faint">
           {data.totalEntries} entries
         </span>
         <svg
@@ -120,7 +120,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
                 ai-powered weekly brief
               </p>
             </>
@@ -129,14 +129,14 @@ export default function WeeklySummary() {
               {/* Fallback: rule-based */}
               {data.themes.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Themes This Week
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {data.themes.map((t) => (
                       <span
                         key={t.word}
-                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-[0.65rem]"
+                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-sm"
                       >
                         {t.word}
                         <span className="ml-1 text-text-faint">{t.count}</span>
@@ -170,7 +170,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
                 rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
               </p>
             </>
@@ -184,7 +184,7 @@ export default function WeeklySummary() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+      <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
         {title}
       </h3>
       <ul className="space-y-1">{children}</ul>
@@ -207,16 +207,33 @@ function BulletItem({ icon, color, text }: { icon: string; color: string; text: 
         dangerouslySetInnerHTML={{ __html: icon }}
       />
       <span>
-        {expanded || !hasMore ? text : firstSentence}
+        <BoldText text={expanded || !hasMore ? text : firstSentence} />
         {hasMore && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="ml-1 font-mono text-[0.6rem] text-text-faint hover:text-accent transition-colors"
+            className="ml-1 font-mono text-sm text-text-faint hover:text-accent transition-colors"
           >
             {expanded ? "less" : "more"}
           </button>
         )}
       </span>
     </li>
+  );
+}
+
+function BoldText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i} className="font-semibold text-text-primary">
+            {part.slice(2, -2)}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
   );
 }

@@ -61,7 +61,7 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span
-            className={`font-mono text-[0.6rem] tracking-[0.12em] uppercase px-2 py-0.5 rounded
+            className={`font-mono text-sm tracking-[0.12em] uppercase px-2 py-0.5 rounded
               ${tagStyles[entry.category] || tagStyles.spore}`}
           >
             {cat?.label || entry.category}
@@ -70,14 +70,14 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
           {topics.map((t) => (
             <span
               key={t}
-              className="font-mono text-[0.55rem] tracking-wider px-1.5 py-0.5 rounded
+              className="font-mono text-xs tracking-wider px-1.5 py-0.5 rounded
                 bg-accent/10 text-accent/70"
             >
               {TOPICS[t]?.label || t}
             </span>
           ))}
 
-          <span className="font-mono text-[0.65rem] text-text-faint tracking-wide">
+          <span className="font-mono text-sm text-text-faint tracking-wide">
             {entry.localDate} &middot; {entry.localTime}
           </span>
         </div>
@@ -90,14 +90,14 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
                 setConfirming(false);
               }}
               className="px-3 py-2 min-h-[44px] rounded bg-signal/20 border border-signal/40 text-signal
-                font-mono text-[0.65rem] tracking-wider transition-all hover:bg-signal/30 flex items-center"
+                font-mono text-sm tracking-wider transition-all hover:bg-signal/30 flex items-center"
             >
               delete
             </button>
             <button
               onClick={() => setConfirming(false)}
               className="px-3 py-2 min-h-[44px] rounded border border-border text-text-faint
-                font-mono text-[0.65rem] tracking-wider transition-all hover:text-text-muted flex items-center"
+                font-mono text-sm tracking-wider transition-all hover:text-text-muted flex items-center"
             >
               keep
             </button>
