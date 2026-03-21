@@ -21,8 +21,15 @@ const config: Config = {
         network: "#a088cc",
       },
       fontFamily: {
-        serif: ["'EB Garamond'", "Georgia", "serif"],
-        mono: ["'JetBrains Mono'", "monospace"],
+        serif: ["'Inter'", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "sans-serif"],
+        mono: ["'Inter'", "-apple-system", "sans-serif"],
+      },
+      fontSize: {
+        xs: ["0.8rem", { lineHeight: "1.4" }],
+        sm: ["0.9rem", { lineHeight: "1.5" }],
+        base: ["1rem", { lineHeight: "1.6" }],
+        lg: ["1.15rem", { lineHeight: "1.7" }],
+        xl: ["1.3rem", { lineHeight: "1.6" }],
       },
     },
   },
