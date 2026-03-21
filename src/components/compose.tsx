@@ -7,18 +7,16 @@ interface ComposeProps {
   onSaved: () => void;
 }
 
-const YT_REGEX =
-  /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
+const URL_REGEX = /https?:\/\/[^\s]+/;
 
 export default function Compose({ onSaved }: ComposeProps) {
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isYouTube = YT_REGEX.test(content.trim());
+  const hasUrl = URL_REGEX.test(content.trim());
 
   const handleTranscript = useCallback((text: string) => {
     setContent((prev) => (prev ? prev + " " + text : text));
@@ -45,23 +43,17 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       let res: Response;
 
-      if (isYouTube) {
-        // Extract the URL from the content
-        const urlMatch = content.match(
-          /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)[^\s]+/
-        );
-        const url = urlMatch ? urlMatch[0] : content.trim();
-
-        // Get the user's note (everything that's not the URL)
+      if (hasUrl) {
+        // Extract URL and user note
+        const urlMatch = content.match(URL_REGEX);
+        const url = urlMatch ? urlMatch[0] : "";
         const userNote = content.replace(url, "").trim();
 
-        setAnalyzing(true);
-        res = await fetch("/api/youtube", {
+        res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, userNote, localDate, localTime }),
+          body: JSON.stringify({ content, userNote, localDate, localTime }),
         });
-        setAnalyzing(false);
       } else {
         res = await fetch("/api/entries", {
           method: "POST",
@@ -84,7 +76,6 @@ export default function Compose({ onSaved }: ComposeProps) {
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     } catch {
       setError("Connection error — try again");
-      setAnalyzing(false);
     } finally {
       setSaving(false);
     }
@@ -106,7 +97,7 @@ export default function Compose({ onSaved }: ComposeProps) {
     <div className="mb-8">
       <div
         className={`bg-surface border rounded-lg p-4 transition-colors focus-within:border-accent/60
-          ${isYouTube ? "border-signal/40" : "border-border"}`}
+          ${hasUrl ? "border-signal/40" : "border-border"}`}
       >
         <textarea
           ref={textareaRef}
@@ -117,7 +108,7 @@ export default function Compose({ onSaved }: ComposeProps) {
             autoResize(e.target);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="what's growing in the dark... (paste a YouTube link to analyze)"
+          placeholder="type a thought, paste a link, or speak..."
           rows={3}
           className="w-full bg-transparent text-text-primary text-lg leading-relaxed
             resize-none outline-none placeholder:text-text-faint placeholder:italic font-serif"
@@ -125,9 +116,9 @@ export default function Compose({ onSaved }: ComposeProps) {
 
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
           <p className="font-mono text-[0.6rem] text-text-faint tracking-wide">
-            {isYouTube ? (
+            {hasUrl ? (
               <span className="text-signal">
-                youtube detected — will analyze transcript
+                link detected — will analyze content
               </span>
             ) : (
               "auto-categorized on save"
@@ -144,7 +135,7 @@ export default function Compose({ onSaved }: ComposeProps) {
                 hover:bg-accent hover:text-bg disabled:opacity-30 disabled:hover:bg-transparent
                 disabled:hover:text-accent"
             >
-              {analyzing ? "analyzing..." : saving ? "..." : isYouTube ? "analyze" : "plant"}
+              {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl ? "analyze" : "plant"}
             </button>
           </div>
         </div>
@@ -153,7 +144,7 @@ export default function Compose({ onSaved }: ComposeProps) {
       {saved && (
         <div className="mt-2 text-center animate-saved">
           <span className="font-mono text-xs text-fruit tracking-wider">
-            {isYouTube ? "analyzed & planted" : "planted"}
+            planted
           </span>
         </div>
       )}

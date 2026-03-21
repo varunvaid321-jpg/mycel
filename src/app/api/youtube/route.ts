@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { extractVideoId, getTranscript, getVideoTitle } from "@/lib/youtube";
+import { extractVideoId, getTranscript, getVideoMeta } from "@/lib/youtube";
 import { analyzeVideoTranscript } from "@/lib/ai";
 import { classify } from "@/lib/classifier";
 
@@ -18,62 +18,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid YouTube URL" }, { status: 400 });
   }
 
-  // Fetch transcript and title in parallel
-  let transcript: string;
-  let title: string;
-  try {
-    [transcript, title] = await Promise.all([
-      getTranscript(videoId),
-      getVideoTitle(videoId),
-    ]);
-  } catch {
-    return NextResponse.json(
-      { error: "Could not fetch video transcript. The video may not have captions." },
-      { status: 422 }
-    );
-  }
+  // Fetch metadata and transcript in parallel
+  const [meta, transcript] = await Promise.all([
+    getVideoMeta(videoId),
+    getTranscript(videoId),
+  ]);
 
-  if (!transcript || transcript.length < 50) {
-    return NextResponse.json(
-      { error: "Video transcript too short or unavailable." },
-      { status: 422 }
-    );
-  }
-
-  // AI analysis — pass user's note for context (e.g. "use this for motivation")
-  const analysis = await analyzeVideoTranscript(transcript, title, userNote);
-
-  // Build entry content
+  const hasTranscript = transcript && transcript.length >= 50;
   let content: string;
-  if (analysis) {
-    const takeaways = analysis.keyTakeaways
-      .map((t, i) => `${i + 1}. ${t}`)
-      .join("\n");
-    const actions = analysis.actionItems
-      .map((a) => `→ ${a}`)
-      .join("\n");
+  let analysis = null;
 
-    content = `📺 ${title}\nhttps://youtube.com/watch?v=${videoId}${userNote ? `\n\nMy note: ${userNote}` : ""}\n\n${analysis.summary}\n\nKey takeaways:\n${takeaways}\n\nAction items:\n${actions}`;
+  if (hasTranscript) {
+    // Full AI analysis with transcript
+    analysis = await analyzeVideoTranscript(transcript, meta.title, userNote);
+
+    if (analysis) {
+      const takeaways = analysis.keyTakeaways
+        .map((t, i) => `${i + 1}. ${t}`)
+        .join("\n");
+      const actions = analysis.actionItems
+        .map((a) => `→ ${a}`)
+        .join("\n");
+
+      content = `📺 ${meta.title}${meta.author ? ` — ${meta.author}` : ""}\nhttps://youtube.com/watch?v=${videoId}${userNote ? `\n\nMy note: ${userNote}` : ""}\n\n${analysis.summary}\n\nKey takeaways:\n${takeaways}\n\nAction items:\n${actions}`;
+    } else {
+      content = `📺 ${meta.title}${meta.author ? ` — ${meta.author}` : ""}\nhttps://youtube.com/watch?v=${videoId}${userNote ? `\n\nMy note: ${userNote}` : ""}\n\n${transcript.slice(0, 500)}...`;
+    }
   } else {
-    // Fallback: store basic info with truncated transcript
-    content = `📺 ${title}\nhttps://youtube.com/watch?v=${videoId}\n\n${transcript.slice(0, 500)}...`;
+    // No transcript — save as a bookmark with user's note
+    content = `📺 ${meta.title}${meta.author ? ` — ${meta.author}` : ""}\nhttps://youtube.com/watch?v=${videoId}${userNote ? `\n\nMy note: ${userNote}` : "\n\nSaved for later — no transcript available for analysis."}`;
   }
 
   // Classify and save
   const { category, topics: classifiedTopics } = classify(content);
-  const allTopics = analysis
-    ? [...new Set([...analysis.relevantTopics, ...classifiedTopics])].slice(0, 4)
-    : classifiedTopics;
+  const allTopics =
+    analysis && analysis.relevantTopics
+      ? [...new Set([...analysis.relevantTopics, ...classifiedTopics])].slice(0, 4)
+      : classifiedTopics;
 
   const entry = await prisma.entry.create({
     data: {
       content,
-      category: category === "spore" ? "root" : category, // Videos are always at least root-level
+      category: category === "spore" ? "root" : category,
       tags: allTopics.join(","),
       localDate,
       localTime,
     },
   });
 
-  return NextResponse.json({ entry, analysis }, { status: 201 });
+  return NextResponse.json(
+    { entry, analysis, hasTranscript },
+    { status: 201 }
+  );
 }
