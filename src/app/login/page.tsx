@@ -119,7 +119,7 @@ export default function LoginPage() {
         <div className="absolute w-[400px] h-[500px] right-[10%] top-[20%] bg-network rounded-full blur-[150px]" />
       </div>
 
-      <div className={`text-center z-10 px-6 w-full max-w-[400px] ${locked ? "pt-12" : "flex-1 flex flex-col justify-center"}`}>
+      <div className={`text-center z-10 w-full max-w-md mx-auto px-6 ${locked ? "pt-12" : "flex-1 flex flex-col justify-center"}`}>
         {!locked && <div className="text-6xl mb-6 opacity-60">&#x1F344;</div>}
         <h1 className={`${locked ? "text-2xl mt-2" : "text-5xl md:text-6xl"} font-normal tracking-[0.12em] lowercase text-accent mb-2`}>
           mycel
