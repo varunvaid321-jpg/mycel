@@ -133,44 +133,82 @@ export interface GuideResponse {
 
 // ── Cloudflare Workers AI client ─────────────────────────────
 
-async function ask(prompt: string): Promise<string | null> {
+const MAX_RETRIES = 3;
+
+async function askOnce(prompt: string, caller: string): Promise<string | null> {
   const accountId = process.env.CF_ACCOUNT_ID;
   const apiKey = process.env.CF_AI_API_KEY;
-  if (!accountId || !apiKey) return null;
-
-  try {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: "system", content: SYSTEM_CONTEXT },
-            { role: "user", content: prompt },
-          ],
-          max_tokens: 1500,
-        }),
-      }
-    );
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.result?.response || null;
-  } catch {
+  if (!accountId || !apiKey) {
+    console.warn(`[AI:${caller}] SKIP — missing CF_ACCOUNT_ID or CF_AI_API_KEY`);
     return null;
   }
+
+  const start = Date.now();
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: SYSTEM_CONTEXT },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 1500,
+      }),
+    }
+  );
+
+  const elapsed = Date.now() - start;
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    console.error(`[AI:${caller}] FAIL ${res.status} (${elapsed}ms) — ${errText.slice(0, 200)}`);
+    return null;
+  }
+
+  const data = await res.json();
+  const response = data?.result?.response || null;
+
+  if (!response) {
+    console.warn(`[AI:${caller}] EMPTY response (${elapsed}ms) — raw: ${JSON.stringify(data).slice(0, 200)}`);
+  } else {
+    console.log(`[AI:${caller}] OK (${elapsed}ms) — ${response.length} chars`);
+  }
+
+  return response;
 }
 
-function extractJSON(text: string): string {
-  // Strip markdown code fences if present
+async function ask(prompt: string, caller: string): Promise<string | null> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await askOnce(prompt, caller);
+      if (result) return result;
+      if (attempt < MAX_RETRIES) {
+        console.warn(`[AI:${caller}] retry ${attempt}/${MAX_RETRIES}...`);
+      }
+    } catch (err) {
+      console.error(`[AI:${caller}] ERROR attempt ${attempt}/${MAX_RETRIES} —`, err instanceof Error ? err.message : err);
+      if (attempt >= MAX_RETRIES) return null;
+    }
+  }
+  console.error(`[AI:${caller}] GAVE UP after ${MAX_RETRIES} attempts`);
+  return null;
+}
+
+function parseJSON<T>(text: string, caller: string): T | null {
   const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-  // Try to find JSON object in the text
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  return jsonMatch ? jsonMatch[0] : cleaned;
+  const jsonStr = jsonMatch ? jsonMatch[0] : cleaned;
+  try {
+    return JSON.parse(jsonStr) as T;
+  } catch {
+    console.error(`[AI:${caller}] JSON parse failed — raw: ${text.slice(0, 300)}`);
+    return null;
+  }
 }
 
 function formatEntries(entries: Entry[]): string {
@@ -200,22 +238,23 @@ ${formatted}
 Say ONE thing that matters right now. Return JSON:
 {"message": "one sentence max 25 words", "type": "insight|action|reflection|silent", "intensity": "gentle|warm|direct"}
 
-Rules: If recurring theme without resolution, name it. If they committed to something, remind warmly. If calm, return type "silent". Never preachy. Reference their specific words.`
+Rules: If recurring theme without resolution, name it. If they committed to something, remind warmly. If calm, return type "silent". Never preachy. Reference their specific words.`,
+    "guide"
   );
 
   if (!result) return null;
-  try {
-    return JSON.parse(extractJSON(result)) as GuideResponse;
-  } catch {
-    return null;
-  }
+  return parseJSON<GuideResponse>(result, "guide");
 }
 
 // ── Auto-correct ─────────────────────────────────────────────
 
 export async function autoCorrect(rawText: string): Promise<string> {
+  // Skip AI for very short text (under 10 chars) — not worth the call
+  if (rawText.trim().length < 10) return rawText.trim();
+
   const result = await ask(
-    `Fix spelling, grammar, and typos. Keep original meaning and tone. Return ONLY the corrected text, nothing else.\n\nText: ${rawText}`
+    `Fix spelling, grammar, and typos. Keep original meaning and tone. Return ONLY the corrected text, nothing else.\n\nText: ${rawText}`,
+    "autocorrect"
   );
   return result?.trim() || rawText;
 }
@@ -243,15 +282,12 @@ Return JSON with these keys:
 - "thingsToLetGo": array of 1-3 things to release — use **bold** on key words
 - "prioritizedActions": array of exactly 3 concrete actions — use **bold** on key words
 
-Each string 1-2 sentences max. Bold the most important 2-3 words in each string using **word**.`
+Each string 1-2 sentences max. Bold the most important 2-3 words in each string using **word**.`,
+    "weekly"
   );
 
   if (!result) return null;
-  try {
-    return JSON.parse(extractJSON(result)) as AIWeeklyBrief;
-  } catch {
-    return null;
-  }
+  return parseJSON<AIWeeklyBrief>(result, "weekly");
 }
 
 // ── Video Analysis ───────────────────────────────────────────
@@ -270,15 +306,13 @@ Title: ${videoTitle}
 Transcript: ${trimmed}
 
 Return JSON:
-{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`
+{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`,
+    "video"
   );
 
   if (!result) return null;
-  try {
-    return { title: videoTitle, ...JSON.parse(extractJSON(result)) } as VideoAnalysis;
-  } catch {
-    return null;
-  }
+  const parsed = parseJSON<Omit<VideoAnalysis, "title">>(result, "video");
+  return parsed ? { title: videoTitle, ...parsed } : null;
 }
 
 // ── Web Analysis ─────────────────────────────────────────────
@@ -298,15 +332,13 @@ Title: ${title} (${siteName})
 Content: ${trimmed}
 
 Return JSON:
-{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`
+{"summary": "2-3 sentences", "keyTakeaways": ["3-5 insights"], "actionItems": ["1-3 actions"], "relevantTopics": ["from: health,money,retirement,housing,family,career,relationships,growth,creativity,travel"]}`,
+    "web"
   );
 
   if (!result) return null;
-  try {
-    return { title, ...JSON.parse(extractJSON(result)) } as WebAnalysis;
-  } catch {
-    return null;
-  }
+  const parsed = parseJSON<Omit<WebAnalysis, "title">>(result, "web");
+  return parsed ? { title, ...parsed } : null;
 }
 
 // ── Monthly Review ───────────────────────────────────────────
@@ -324,13 +356,10 @@ export async function generateMonthlyReview(
 ${formatted}
 
 Return JSON:
-{"topFocusAreas": [{"topic":"string","count":0}], "keyDecisions": ["strings"], "circlingThemes": ["unresolved themes"], "shiftedTopics": ["topics that stopped"], "reflection": "one paragraph reflection"}`
+{"topFocusAreas": [{"topic":"string","count":0}], "keyDecisions": ["strings"], "circlingThemes": ["unresolved themes"], "shiftedTopics": ["topics that stopped"], "reflection": "one paragraph reflection"}`,
+    "monthly"
   );
 
   if (!result) return null;
-  try {
-    return JSON.parse(extractJSON(result)) as AIMonthlyReview;
-  } catch {
-    return null;
-  }
+  return parseJSON<AIMonthlyReview>(result, "monthly");
 }
