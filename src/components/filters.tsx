@@ -37,8 +37,8 @@ export default function Filters({
   return (
     <div className="mb-5 pb-4 border-b border-border space-y-3">
       {/* Type filter row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-14 shrink-0">
           type
         </span>
         <button
@@ -63,8 +63,8 @@ export default function Filters({
       </div>
 
       {/* Topic filter row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-10 shrink-0">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-14 shrink-0">
           life
         </span>
         <button

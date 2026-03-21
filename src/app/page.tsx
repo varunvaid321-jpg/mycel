@@ -86,7 +86,7 @@ export default function Home() {
 
         {/* Filters + Search + Decisions toggle */}
         <div className="mb-5 pb-4 border-b border-border">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => setShowDecisions(false)}
               className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center ${
