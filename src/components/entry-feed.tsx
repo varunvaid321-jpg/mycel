@@ -12,6 +12,7 @@ interface Entry {
   localDate: string;
   localTime: string;
   createdAt: string;
+  imagePath?: string;
 }
 
 interface EntryFeedProps {

@@ -13,6 +13,8 @@ import {
   COMPOSE_BOX,
   COMPOSE_BOX_ACTIVE,
   COMPOSE_BOX_IDLE,
+  MIC_BASE,
+  MIC_IDLE,
 } from "@/lib/design-tokens";
 
 interface ComposeProps {
@@ -28,7 +30,10 @@ export default function Compose({ onSaved }: ComposeProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasUrl = URL_REGEX.test(content.trim());
   const emotion = useMemo(() => detectEmotion(content), [content]);
@@ -45,8 +50,31 @@ export default function Compose({ onSaved }: ComposeProps) {
     setListening(isListening);
   }, []);
 
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image too large — max 10MB");
+      return;
+    }
+
+    setImageFile(file);
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
+    setError("");
+  }
+
+  function removeImage() {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function handleSave() {
-    if (!content.trim() || saving) return;
+    if ((!content.trim() && !imageFile) || saving) return;
     setSaving(true);
     setError("");
 
@@ -67,7 +95,7 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       let res: Response;
 
-      if (hasUrl) {
+      if (hasUrl && !imageFile) {
         const urlMatch = content.match(URL_REGEX);
         const url = urlMatch ? urlMatch[0] : "";
         const userNote = content.replace(url, "").trim();
@@ -76,6 +104,18 @@ export default function Compose({ onSaved }: ComposeProps) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content, userNote, localDate, localTime }),
+        });
+      } else if (imageFile) {
+        // Multipart upload
+        const formData = new FormData();
+        formData.append("content", content);
+        formData.append("localDate", localDate);
+        formData.append("localTime", localTime);
+        formData.append("image", imageFile);
+
+        res = await fetch("/api/entries", {
+          method: "POST",
+          body: formData,
         });
       } else {
         res = await fetch("/api/entries", {
@@ -94,6 +134,7 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       setContent("");
       setInterim("");
+      removeImage();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -120,9 +161,8 @@ export default function Compose({ onSaved }: ComposeProps) {
   return (
     <div className="mb-8">
       <div
-        className={`${COMPOSE_BOX} ${listening || hasUrl ? COMPOSE_BOX_ACTIVE : COMPOSE_BOX_IDLE}`}
+        className={`${COMPOSE_BOX} ${listening || hasUrl || imageFile ? COMPOSE_BOX_ACTIVE : COMPOSE_BOX_IDLE}`}
       >
-        {/* Show textarea when not listening, or when listening show the live text */}
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -137,7 +177,6 @@ export default function Compose({ onSaved }: ComposeProps) {
             rows={3}
             className={`${INPUT_TEXTAREA} ${listening ? "placeholder:text-signal" : ""}`}
           />
-          {/* Live interim text shown below textarea */}
           {listening && interim && (
             <div className="mt-1 px-1 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-signal animate-pulse shrink-0" />
@@ -148,7 +187,28 @@ export default function Compose({ onSaved }: ComposeProps) {
           )}
         </div>
 
-        {/* Emotional guidance — instant, before save */}
+        {/* Image preview */}
+        {imagePreview && (
+          <div className="mt-3 relative inline-block">
+            <img
+              src={imagePreview}
+              alt="Upload preview"
+              className="max-h-32 rounded-lg border border-border object-cover"
+            />
+            <button
+              onClick={removeImage}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-surface border border-border
+                flex items-center justify-center text-text-faint hover:text-signal hover:border-signal/40 transition-all"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Emotional guidance */}
         {emotion.detected && (
           <div className={`mt-3 px-3 py-2.5 ${ALERT_SIGNAL} animate-fade-in`}>
             <p className="text-sm text-text-primary leading-relaxed">
@@ -169,6 +229,10 @@ export default function Compose({ onSaved }: ComposeProps) {
                 </span>
                 speaking — tap mic to stop
               </span>
+            ) : imageFile ? (
+              <span className="text-accent">
+                photo attached{content.trim() ? "" : " — add a thought or plant as-is"}
+              </span>
             ) : hasUrl ? (
               <span className="text-signal">
                 link detected — will analyze content
@@ -179,6 +243,28 @@ export default function Compose({ onSaved }: ComposeProps) {
           </p>
 
           <div className="flex items-center gap-2">
+            {/* Photo button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={`${MIC_BASE} ${MIC_IDLE}`}
+              title="Add photo"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+            </button>
+
             <MicButton
               onTranscript={handleTranscript}
               onInterim={handleInterim}
@@ -186,10 +272,10 @@ export default function Compose({ onSaved }: ComposeProps) {
             />
             <button
               onClick={handleSave}
-              disabled={!content.trim() || saving}
+              disabled={(!content.trim() && !imageFile) || saving}
               className={`${BTN_PRIMARY} disabled:hover:bg-transparent disabled:hover:text-accent`}
             >
-              {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl ? "analyze" : "plant"}
+              {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl && !imageFile ? "analyze" : "plant"}
             </button>
           </div>
         </div>

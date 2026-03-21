@@ -16,6 +16,7 @@ import {
   CARD_PADDING,
   CARD_HOVER,
 } from "@/lib/design-tokens";
+import Lightbox from "./lightbox";
 
 interface Entry {
   id: string;
@@ -25,6 +26,7 @@ interface Entry {
   localDate: string;
   localTime: string;
   createdAt: string;
+  imagePath?: string;
 }
 
 interface EntryCardProps {
@@ -56,67 +58,102 @@ function HighlightedText({ text, term }: { text: string; term?: string }) {
 
 export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProps) {
   const [confirming, setConfirming] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const cat = CATEGORIES[entry.category as Category];
   const topics = entry.tags
     ? entry.tags.split(",").filter(Boolean) as Topic[]
     : [];
 
+  const imageId = entry.imagePath?.split(".")[0];
+  const imageSrc = imageId ? `/api/images/${imageId}` : null;
+
   return (
-    <div className={`group ${CARD} ${CARD_PADDING} ${CARD_HOVER} animate-fade-in`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`${TAG_BASE} ${TAG_STYLES[entry.category] || TAG_STYLES.spore}`}
-          >
-            {cat?.label || entry.category}
-          </span>
-
-          {topics.map((t) => (
-            <span key={t} className={TAG_TOPIC}>
-              {TOPICS[t]?.label || t}
+    <>
+      <div className={`group ${CARD} ${CARD_PADDING} ${CARD_HOVER} animate-fade-in`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`${TAG_BASE} ${TAG_STYLES[entry.category] || TAG_STYLES.spore}`}
+            >
+              {cat?.label || entry.category}
             </span>
-          ))}
 
-          <span className={TEXT_META}>
-            {entry.localDate} &middot; {entry.localTime}
-          </span>
+            {topics.map((t) => (
+              <span key={t} className={TAG_TOPIC}>
+                {TOPICS[t]?.label || t}
+              </span>
+            ))}
+
+            <span className={TEXT_META}>
+              {entry.localDate} &middot; {entry.localTime}
+            </span>
+          </div>
+
+          {confirming ? (
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              <button
+                onClick={() => {
+                  onDelete(entry.id);
+                  setConfirming(false);
+                }}
+                className={BTN_DELETE_CONFIRM}
+              >
+                delete
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                className={BTN_DELETE_CANCEL}
+              >
+                keep
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirming(true)}
+              className={BTN_ICON_DELETE}
+              title="Delete"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {confirming ? (
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            <button
-              onClick={() => {
-                onDelete(entry.id);
-                setConfirming(false);
-              }}
-              className={BTN_DELETE_CONFIRM}
-            >
-              delete
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              className={BTN_DELETE_CANCEL}
-            >
-              keep
-            </button>
-          </div>
-        ) : (
+        {/* Image thumbnail */}
+        {imageSrc && (
           <button
-            onClick={() => setConfirming(true)}
-            className={BTN_ICON_DELETE}
-            title="Delete"
+            onClick={() => setLightbox(true)}
+            className="mb-3 block rounded-lg overflow-hidden border border-border hover:border-accent/40 transition-colors cursor-pointer"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <img
+              src={imageSrc}
+              alt="Entry photo"
+              className="max-h-48 w-auto object-cover rounded-lg"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
           </button>
+        )}
+
+        {/* Content — hide if it's just the camera emoji placeholder */}
+        {entry.content && entry.content !== "📷" && (
+          <div className={TEXT_ENTRY_CONTENT}>
+            <HighlightedText text={entry.content} term={searchTerm} />
+          </div>
         )}
       </div>
 
-      <div className={TEXT_ENTRY_CONTENT}>
-        <HighlightedText text={entry.content} term={searchTerm} />
-      </div>
-    </div>
+      {/* Full-screen lightbox */}
+      {lightbox && imageSrc && (
+        <Lightbox
+          src={imageSrc}
+          alt={`Photo from ${entry.localDate}`}
+          onClose={() => setLightbox(false)}
+        />
+      )}
+    </>
   );
 }
