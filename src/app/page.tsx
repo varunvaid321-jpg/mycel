@@ -43,7 +43,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="font-mono text-[0.6rem] sm:text-[0.65rem] text-text-faint tracking-wide hidden sm:inline">
+              <span className="font-mono text-sm sm:text-sm text-text-faint tracking-wide hidden sm:inline">
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -51,7 +51,7 @@ export default function Home() {
                   timeZone: "America/Toronto",
                 })}
               </span>
-              <span className="font-mono text-[0.6rem] text-text-faint tracking-wide sm:hidden">
+              <span className="font-mono text-sm text-text-faint tracking-wide sm:hidden">
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -60,7 +60,7 @@ export default function Home() {
               </span>
               <button
                 onClick={handleLogout}
-                className="font-mono text-[0.6rem] text-text-faint hover:text-signal
+                className="font-mono text-sm text-text-faint hover:text-signal
                   tracking-wider transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 log out
@@ -89,7 +89,7 @@ export default function Home() {
           <div className="flex items-center gap-2 mb-3">
             <button
               onClick={() => setShowDecisions(false)}
-              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all flex items-center ${
+              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center ${
                 !showDecisions
                   ? "border-text-muted text-text-primary bg-surface-hover"
                   : "border-border text-text-faint hover:text-text-muted"
@@ -99,7 +99,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setShowDecisions(true)}
-              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-[0.6rem] tracking-wider uppercase border transition-all flex items-center ${
+              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center ${
                 showDecisions
                   ? "border-fruit/50 text-fruit bg-fruit/10"
                   : "border-border text-text-faint hover:text-text-muted"
@@ -137,12 +137,12 @@ export default function Home() {
         <footer className="mt-16 pb-8 text-center space-y-2">
           <a
             href="/import"
-            className="inline-block font-mono text-[0.65rem] text-text-faint hover:text-accent tracking-wider transition-colors"
+            className="inline-block font-mono text-sm text-text-faint hover:text-accent tracking-wider transition-colors"
           >
             import memories
           </a>
           <br />
-          <span className="font-mono text-[0.55rem] text-text-faint tracking-[0.2em]">
+          <span className="font-mono text-xs text-text-faint tracking-[0.2em]">
             mycel &middot; private by default
           </span>
         </footer>

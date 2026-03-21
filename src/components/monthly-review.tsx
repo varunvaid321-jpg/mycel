@@ -40,10 +40,10 @@ export default function MonthlyReview() {
         className="w-full flex items-center gap-2"
       >
         <span className="w-2 h-2 rounded-full bg-network/60" />
-        <span className="font-mono text-[0.7rem] tracking-[0.2em] uppercase text-network/80">
+        <span className="font-mono text-sm tracking-[0.2em] uppercase text-network/80">
           Monthly Review
         </span>
-        <span className="ml-auto font-mono text-[0.6rem] text-text-faint">
+        <span className="ml-auto font-mono text-sm text-text-faint">
           {data.totalEntries} entries &middot; 30d
         </span>
         <svg
@@ -65,13 +65,13 @@ export default function MonthlyReview() {
             <>
               {ai.topFocusAreas.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Where Your Attention Went
                   </h3>
                   <div className="space-y-1">
                     {ai.topFocusAreas.map((a, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <span className="font-mono text-[0.65rem] text-accent w-6 text-right">
+                        <span className="font-mono text-sm text-accent w-6 text-right">
                           {a.count}
                         </span>
                         <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
@@ -82,7 +82,7 @@ export default function MonthlyReview() {
                             }}
                           />
                         </div>
-                        <span className="font-mono text-[0.6rem] text-text-muted w-20">
+                        <span className="font-mono text-sm text-text-muted w-20">
                           {a.topic}
                         </span>
                       </div>
@@ -93,7 +93,7 @@ export default function MonthlyReview() {
 
               {ai.keyDecisions.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Key Decisions
                   </h3>
                   <ul className="space-y-1">
@@ -109,7 +109,7 @@ export default function MonthlyReview() {
 
               {ai.circlingThemes.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Still Circling
                   </h3>
                   <ul className="space-y-1">
@@ -125,7 +125,7 @@ export default function MonthlyReview() {
 
               {ai.shiftedTopics.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     What Shifted
                   </h3>
                   <ul className="space-y-1">
@@ -152,14 +152,14 @@ export default function MonthlyReview() {
               {/* Fallback stats */}
               {data.topFocusAreas.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Top Focus Areas
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {data.topFocusAreas.map((a, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-[0.65rem]"
+                        className="px-2 py-0.5 bg-network/10 text-network/80 rounded font-mono text-sm"
                       >
                         {a.topic}
                         <span className="ml-1 text-text-faint">{a.count}</span>
@@ -171,7 +171,7 @@ export default function MonthlyReview() {
 
               {data.keyDecisions.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-[0.65rem] tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
                     Decisions Made
                   </h3>
                   <ul className="space-y-1">
@@ -185,7 +185,7 @@ export default function MonthlyReview() {
                 </div>
               )}
 
-              <p className="font-mono text-[0.55rem] text-text-faint tracking-wider pt-2 border-t border-border">
+              <p className="font-mono text-xs text-text-faint tracking-wider pt-2 border-t border-border">
                 basic stats &middot; add ANTHROPIC_API_KEY for ai review
               </p>
             </>

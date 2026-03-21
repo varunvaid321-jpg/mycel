@@ -103,7 +103,7 @@ export default function LoginPage() {
             /* Security challenge */
             <div className="space-y-4">
               <div className="bg-signal/10 border border-signal/30 rounded-lg px-4 py-3">
-                <p className="font-mono text-[0.65rem] text-signal tracking-wider uppercase mb-1">
+                <p className="font-mono text-sm text-signal tracking-wider uppercase mb-1">
                   security check
                 </p>
                 <p className="text-sm text-text-muted">
@@ -149,7 +149,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <div className="absolute bottom-8 font-mono text-[0.65rem] text-text-faint tracking-[0.2em]">
+      <div className="absolute bottom-8 font-mono text-sm text-text-faint tracking-[0.2em]">
         no names &middot; no traces &middot; just growth
       </div>
     </div>

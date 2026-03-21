@@ -81,7 +81,7 @@ export default function MicButton({ onTranscript, onInterim, onListeningChange }
 
   if (!supported) {
     return (
-      <span className="font-mono text-[0.6rem] text-text-faint">
+      <span className="font-mono text-sm text-text-faint">
         mic unavailable
       </span>
     );

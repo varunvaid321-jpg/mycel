@@ -39,7 +39,7 @@ export default function Momentum() {
         onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center gap-2"
       >
-        <span className="font-mono text-[0.7rem] tracking-[0.2em] uppercase text-accent/80">
+        <span className="font-mono text-sm tracking-[0.2em] uppercase text-accent/80">
           Momentum &middot; 30 Days
         </span>
         <svg
@@ -63,7 +63,7 @@ export default function Momentum() {
               {data.days.map((d, i) => (
                 <div
                   key={d.date}
-                  className="flex-1 text-center font-mono text-[0.45rem] text-text-faint"
+                  className="flex-1 text-center font-mono text-xs text-text-faint"
                 >
                   {i % 7 === 0 ? d.date.slice(5) : ""}
                 </div>
@@ -73,7 +73,7 @@ export default function Momentum() {
             {/* Grid rows */}
             {activeTopics.map((topic) => (
               <div key={topic.key} className="flex items-center mb-0.5">
-                <span className="w-20 text-right pr-3 font-mono text-[0.55rem] text-text-muted truncate shrink-0">
+                <span className="w-20 text-right pr-3 font-mono text-xs text-text-muted truncate shrink-0">
                   {topic.label}
                 </span>
                 <div className="flex flex-1 gap-px">
@@ -90,11 +90,11 @@ export default function Momentum() {
 
             {/* Legend */}
             <div className="flex items-center gap-2 mt-3 ml-20">
-              <span className="font-mono text-[0.5rem] text-text-faint">less</span>
+              <span className="font-mono text-xs text-text-faint">less</span>
               <div className="w-3 h-3 rounded-sm bg-border/30" />
               <div className="w-3 h-3 rounded-sm bg-accent/30" />
               <div className="w-3 h-3 rounded-sm bg-accent/70" />
-              <span className="font-mono text-[0.5rem] text-text-faint">more</span>
+              <span className="font-mono text-xs text-text-faint">more</span>
             </div>
           </div>
         </div>

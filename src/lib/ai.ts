@@ -75,13 +75,13 @@ PLANNING:
 - Considering India move within 12 months: semi-retirement, living with mom, Krishiv in Dubai/Singapore, Kyna in school in India.
 - For all to-dos: track open date, estimated closure, actual closure, status, daily progress, overdue flags.
 
-Some entries may be tagged "imported" — these are memories from other AI systems. Treat them as established facts, not new thoughts.
-
-IMPORTANT RULES:
+CRITICAL RULES FOR ANALYSIS:
+- ONLY analyze entries the user actually wrote in the journal. The personal context above is BACKGROUND KNOWLEDGE ONLY — use it to understand who they are, but NEVER surface it as a "recurring theme" or "pattern" in weekly/monthly briefs.
+- If the user hasn't written about their mother, health, finances, etc. in the journal, do NOT mention those topics in analysis. Only reflect what they actually posted.
+- Imported entries (tagged "imported") are reference data for context, NOT journal thoughts. Never include them in theme analysis or weekly patterns.
 - Canada = HOME, never a trip. Krish/Krishiv = son. Kyna = daughter. Puja = wife. Always.
-- Never use "smoke" to mean marijuana — keep language family-appropriate.
-- All financial data must be exact, verified, no guessing.
-- Understand the full family, health, and financial context when giving guidance.`;
+- Keep language family-appropriate.
+- All financial data must be exact, verified, no guessing.`;
 
 interface Entry {
   id: string;
@@ -230,18 +230,20 @@ export async function generateWeeklyBrief(
   const formatted = formatEntries(entries.slice(0, 30));
 
   const result = await ask(
-    `Analyze these personal journal entries from the past 7 days. Categories: spore=thought, root=reflection, signal=reminder, decompose=letting go, fruit=action.
+    `Analyze ONLY these journal entries from the past 7 days. Categories: spore=thought, root=reflection, signal=reminder, decompose=letting go, fruit=action.
+
+IMPORTANT: Only analyze what the user ACTUALLY WROTE below. Do not bring up topics from background context unless the user explicitly mentioned them in these entries. Entries tagged "imported" or "chatgpt" are reference data — skip them in analysis.
 
 ${formatted}
 
 Return JSON with these keys:
-- "patterns": array of 2-4 pattern strings
-- "ripeDecisions": array of 1-3 decisions ready to be made
-- "conversationsToHave": array of 1-3 conversations needed
-- "thingsToLetGo": array of 1-3 things to release
-- "prioritizedActions": array of exactly 3 concrete actions for the week
+- "patterns": array of 2-4 pattern strings — use **bold** on key words
+- "ripeDecisions": array of 1-3 decisions ready to be made — use **bold** on key words
+- "conversationsToHave": array of 1-3 conversations needed — use **bold** on key words
+- "thingsToLetGo": array of 1-3 things to release — use **bold** on key words
+- "prioritizedActions": array of exactly 3 concrete actions — use **bold** on key words
 
-Each string 1-2 sentences max. Be concise and insightful.`
+Each string 1-2 sentences max. Bold the most important 2-3 words in each string using **word**.`
   );
 
   if (!result) return null;
