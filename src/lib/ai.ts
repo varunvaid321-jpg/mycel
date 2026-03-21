@@ -72,6 +72,71 @@ function formatEntries(entries: Entry[]): string {
     .join("\n\n");
 }
 
+// ── Intelligent Guide ────────────────────────────────────────
+
+export interface GuideResponse {
+  message: string;
+  type: "insight" | "action" | "reflection" | "silent";
+  intensity: "gentle" | "warm" | "direct";
+}
+
+export async function generateGuide(
+  entries: Entry[]
+): Promise<GuideResponse | null> {
+  if (entries.length < 2) return null;
+
+  const formatted = formatEntries(entries);
+
+  // Separate content types for context
+  const signals = entries.filter((e) => e.category === "signal");
+  const fruits = entries.filter((e) => e.category === "fruit");
+  const decompose = entries.filter((e) => e.category === "decompose");
+  const analyzed = entries.filter((e) => e.content.includes("📺") || e.content.includes("🔗"));
+
+  const result = await ask(
+    `You are a thoughtful personal guide — like a wise friend who knows someone deeply. You've been reading this person's private journal. Your job: say ONE thing that matters right now.
+
+Here are their recent journal entries (newest first). Categories: spore=quick thought, root=deep reflection, signal=reminder to self, decompose=letting go, fruit=action/decision. Some entries are analyzed videos/articles they consumed.
+
+${formatted}
+
+Context:
+- ${signals.length} active reminders/signals
+- ${fruits.length} actions/decisions made
+- ${decompose.length} things they're trying to let go
+- ${analyzed.length} videos/articles they consumed and found valuable
+
+Rules for your response:
+1. Return a JSON object with exactly these keys:
+   - "message": ONE sentence (max 25 words). No greeting, no filler. Just the insight, nudge, or reflection.
+   - "type": one of "insight" (pattern you noticed), "action" (something they should do), "reflection" (something to sit with), or "silent" (nothing worth saying right now — use this if entries are calm and resolved)
+   - "intensity": "gentle" (things are okay, soft observation), "warm" (encouraging, building momentum), "direct" (something important they keep avoiding)
+
+2. What to say:
+   - If you see recurring themes without resolution → gently name it
+   - If they committed to something but haven't followed through → remind warmly
+   - If emotions are running high → offer perspective, not solutions
+   - If they consumed content (videos/articles) → weave that wisdom into guidance naturally
+   - If things seem calm and resolved → return type "silent"
+   - If they're avoiding a conversation or decision → name it directly but kindly
+   - If there's a pattern across their consumed content → reflect what they seem to be seeking
+
+3. Tone: Like a wise friend who speaks rarely but always says the right thing. Never preachy. Never generic. Reference their specific words/situations.
+
+4. NEVER use their name. NEVER say "you should". Prefer "maybe it's time to..." or "that thing about..." or questions.
+
+Return ONLY valid JSON, no markdown.`
+  );
+
+  if (!result) return null;
+
+  try {
+    return JSON.parse(extractJSON(result)) as GuideResponse;
+  } catch {
+    return null;
+  }
+}
+
 // ── Auto-correct ─────────────────────────────────────────────
 
 export async function autoCorrect(rawText: string): Promise<string> {
