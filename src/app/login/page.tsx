@@ -5,28 +5,56 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [passphrase, setPassphrase] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [challenge, setChallenge] = useState<{
+    question: string;
+    location: string;
+  } | null>(null);
+  const [secretAnswer, setSecretAnswer] = useState("");
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(false);
+    setError("");
     setLoading(true);
+
+    const body: Record<string, string> = { passphrase };
+    if (challenge) {
+      body.secretAnswer = secretAnswer;
+    }
 
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ passphrase }),
+      body: JSON.stringify(body),
     });
 
     if (res.ok) {
       router.push("/");
       router.refresh();
-    } else {
-      setError(true);
-      setLoading(false);
+      return;
     }
+
+    const data = await res.json();
+
+    if (data.error === "location_challenge") {
+      setChallenge({
+        question: data.question,
+        location: data.location,
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (data.error === "invalid_answer") {
+      setError("wrong answer");
+    } else {
+      setError("wrong passphrase");
+      setChallenge(null);
+      setSecretAnswer("");
+    }
+    setLoading(false);
   }
 
   return (
@@ -48,31 +76,75 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="w-full max-w-[360px] mx-auto">
-          <div className="flex">
-            <input
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="enter passphrase"
-              autoFocus
-              className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
-                font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
-                outline-none transition-colors focus:border-accent
-                ${error ? "border-signal" : ""}`}
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
-                text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
-                disabled:opacity-50"
-            >
-              {loading ? "..." : "enter"}
-            </button>
-          </div>
+          {!challenge ? (
+            /* Normal passphrase entry */
+            <div className="flex">
+              <input
+                type="password"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="enter passphrase"
+                autoFocus
+                className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
+                  font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
+                  outline-none transition-colors focus:border-accent
+                  ${error ? "border-signal" : ""}`}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
+                  text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
+                  disabled:opacity-50"
+              >
+                {loading ? "..." : "enter"}
+              </button>
+            </div>
+          ) : (
+            /* Security challenge */
+            <div className="space-y-4">
+              <div className="bg-signal/10 border border-signal/30 rounded-lg px-4 py-3">
+                <p className="font-mono text-[0.65rem] text-signal tracking-wider uppercase mb-1">
+                  unusual location
+                </p>
+                <p className="text-sm text-text-muted">
+                  {challenge.location}
+                </p>
+              </div>
+
+              <p className="text-sm text-text-primary italic">
+                {challenge.question}
+              </p>
+
+              <div className="flex">
+                <input
+                  type="text"
+                  value={secretAnswer}
+                  onChange={(e) => setSecretAnswer(e.target.value)}
+                  placeholder="your answer"
+                  autoFocus
+                  autoComplete="off"
+                  className={`flex-1 bg-surface border border-border border-r-0 rounded-l px-4 py-3 min-h-[44px]
+                    font-mono text-base sm:text-sm text-text-primary tracking-wider placeholder:text-text-faint
+                    outline-none transition-colors focus:border-accent
+                    ${error ? "border-signal" : ""}`}
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-accent border border-accent rounded-r px-5 py-3 min-h-[44px] text-bg font-mono
+                    text-sm sm:text-xs tracking-[0.15em] uppercase transition-opacity hover:opacity-85
+                    disabled:opacity-50"
+                >
+                  {loading ? "..." : "verify"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && (
             <p className="mt-3 font-mono text-xs text-signal tracking-wide">
-              wrong passphrase
+              {error}
             </p>
           )}
         </form>
