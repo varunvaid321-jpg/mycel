@@ -4,18 +4,21 @@ import { useState, useRef, useEffect } from "react";
 
 interface MicButtonProps {
   onTranscript: (text: string) => void;
+  onInterim: (text: string) => void;
+  onListeningChange: (listening: boolean) => void;
 }
 
-export default function MicButton({ onTranscript }: MicButtonProps) {
+export default function MicButton({ onTranscript, onInterim, onListeningChange }: MicButtonProps) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(true);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const onTranscriptRef = useRef(onTranscript);
+  const onInterimRef = useRef(onInterim);
 
-  // Always keep the ref current
   useEffect(() => {
     onTranscriptRef.current = onTranscript;
-  }, [onTranscript]);
+    onInterimRef.current = onInterim;
+  }, [onTranscript, onInterim]);
 
   function toggle() {
     if (typeof window === "undefined") return;
@@ -30,35 +33,50 @@ export default function MicButton({ onTranscript }: MicButtonProps) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
       setListening(false);
+      onListeningChange(false);
+      onInterimRef.current("");
       return;
     }
 
     const recognition = new SR();
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          onTranscriptRef.current(event.results[i][0].transcript);
+          onTranscriptRef.current(transcript);
+          onInterimRef.current("");
+        } else {
+          interim += transcript;
         }
+      }
+      if (interim) {
+        onInterimRef.current(interim);
       }
     };
 
     recognition.onerror = () => {
       setListening(false);
+      onListeningChange(false);
+      onInterimRef.current("");
       recognitionRef.current = null;
     };
 
     recognition.onend = () => {
       setListening(false);
+      onListeningChange(false);
+      onInterimRef.current("");
       recognitionRef.current = null;
     };
 
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
+    onListeningChange(true);
   }
 
   if (!supported) {
@@ -76,7 +94,7 @@ export default function MicButton({ onTranscript }: MicButtonProps) {
       className={`w-9 h-9 rounded-full flex items-center justify-center transition-all
         ${
           listening
-            ? "bg-signal/20 text-signal border border-signal/40"
+            ? "bg-signal/20 text-signal border border-signal/40 animate-pulse"
             : "bg-surface-hover text-text-muted border border-border hover:text-text-primary"
         }`}
       title={listening ? "Stop dictation" : "Start dictation"}
