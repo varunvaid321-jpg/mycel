@@ -43,7 +43,7 @@ export default function Filters({
         </span>
         <button
           onClick={() => onCategoryChange("all")}
-          className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
             border transition-all
             ${activeCategory === "all" ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
         >
@@ -53,7 +53,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onCategoryChange(key)}
-            className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
               border transition-all
               ${activeCategory === key ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
           >
@@ -69,7 +69,7 @@ export default function Filters({
         </span>
         <button
           onClick={() => onTopicChange("all")}
-          className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
             border transition-all
             ${activeTopic === "all" ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
         >
@@ -79,7 +79,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onTopicChange(key)}
-            className={`px-2.5 py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
+            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-[0.6rem] tracking-wider uppercase
               border transition-all
               ${activeTopic === key ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
           >
@@ -98,13 +98,13 @@ export default function Filters({
             if (e.key === "Enter") submitSearch();
           }}
           placeholder="search entries..."
-          className="flex-1 sm:flex-none sm:w-56 bg-surface border border-border rounded px-3 py-1.5
-            font-mono text-xs text-text-primary tracking-wide placeholder:text-text-faint
+          className="flex-1 sm:flex-none sm:w-56 bg-surface border border-border rounded px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0
+            font-mono text-sm sm:text-xs text-text-primary tracking-wide placeholder:text-text-faint
             outline-none focus:border-accent/50 transition-colors"
         />
         <button
           onClick={submitSearch}
-          className="px-3 py-1.5 bg-surface border border-accent/40 text-accent rounded
+          className="px-4 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-surface border border-accent/40 text-accent rounded
             font-mono text-[0.65rem] tracking-wider uppercase transition-all
             hover:bg-accent hover:text-bg"
         >
@@ -113,7 +113,7 @@ export default function Filters({
         {search && (
           <button
             onClick={clearSearch}
-            className="px-2 py-1.5 font-mono text-[0.65rem] text-text-faint hover:text-signal transition-colors"
+            className="px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 font-mono text-[0.65rem] text-text-faint hover:text-signal transition-colors"
           >
             clear
           </button>

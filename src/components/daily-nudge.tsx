@@ -84,7 +84,7 @@ export default function DailyNudge() {
         </p>
         <button
           onClick={handleDismiss}
-          className="font-mono text-[0.6rem] text-text-faint hover:text-text-muted transition-colors shrink-0 mt-0.5"
+          className="font-mono text-[0.6rem] text-text-faint hover:text-text-muted transition-colors shrink-0 mt-0.5 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2 -mt-2"
         >
           ✕
         </button>
