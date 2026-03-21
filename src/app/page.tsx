@@ -10,6 +10,15 @@ import Momentum from "@/components/momentum";
 import Filters from "@/components/filters";
 import EntryFeed from "@/components/entry-feed";
 import Decisions from "@/components/decisions";
+import {
+  PAGE_CONTAINER,
+  TEXT_TAGLINE,
+  TEXT_FOOTER,
+  BTN_TEXT_LINK,
+  TEXT_META,
+  BTN_PILL_ACTIVE_CATEGORY,
+  BTN_PILL_INACTIVE,
+} from "@/lib/design-tokens";
 
 export default function Home() {
   const [category, setCategory] = useState("all");
@@ -30,7 +39,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <div className={PAGE_CONTAINER}>
         {/* Header */}
         <header className="mb-10">
           <div className="flex items-center justify-between">
@@ -38,12 +47,12 @@ export default function Home() {
               <h1 className="text-3xl tracking-[0.1em] lowercase text-accent font-normal">
                 mycel
               </h1>
-              <p className="text-sm italic text-text-muted mt-0.5">
+              <p className={`${TEXT_TAGLINE} mt-0.5`}>
                 Ideas spread quietly.
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="font-mono text-sm sm:text-sm text-text-faint tracking-wide hidden sm:inline">
+              <span className={`${TEXT_META} hidden sm:inline`}>
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -51,7 +60,7 @@ export default function Home() {
                   timeZone: "America/Toronto",
                 })}
               </span>
-              <span className="font-mono text-sm text-text-faint tracking-wide sm:hidden">
+              <span className={`${TEXT_META} sm:hidden`}>
                 {new Date().toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -89,11 +98,7 @@ export default function Home() {
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => setShowDecisions(false)}
-              className={`px-3 py-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-full font-mono text-sm tracking-wider uppercase border transition-all flex items-center ${
-                !showDecisions
-                  ? "border-text-muted text-text-primary bg-surface-hover"
-                  : "border-border text-text-faint hover:text-text-muted"
-              }`}
+              className={`${!showDecisions ? BTN_PILL_ACTIVE_CATEGORY : BTN_PILL_INACTIVE} flex items-center py-2 sm:py-1 min-h-[44px] sm:min-h-0`}
             >
               feed
             </button>
@@ -137,12 +142,12 @@ export default function Home() {
         <footer className="mt-16 pb-8 text-center space-y-2">
           <a
             href="/import"
-            className="inline-block font-mono text-sm text-text-faint hover:text-accent tracking-wider transition-colors"
+            className={`inline-block ${BTN_TEXT_LINK}`}
           >
             import memories
           </a>
           <br />
-          <span className="font-mono text-xs text-text-faint tracking-[0.2em]">
+          <span className={TEXT_FOOTER}>
             mycel &middot; private by default
           </span>
         </footer>

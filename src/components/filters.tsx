@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { CATEGORY_KEYS, CATEGORIES } from "@/lib/categories";
 import { TOPICS, type Topic } from "@/lib/classifier";
+import {
+  BTN_PILL_INACTIVE,
+  BTN_PILL_ACTIVE_CATEGORY,
+  BTN_PILL_ACTIVE_TOPIC,
+  INPUT_TEXT,
+  BTN_SEARCH_GO,
+  BTN_SEARCH_CLEAR,
+  TEXT_FILTER_LABEL,
+  FILTER_ROW,
+  FILTER_SECTION,
+} from "@/lib/design-tokens";
 
 const TOPIC_KEYS = Object.keys(TOPICS) as Topic[];
 
@@ -35,17 +46,15 @@ export default function Filters({
   }
 
   return (
-    <div className="mb-5 pb-4 border-b border-border space-y-3">
+    <div className={FILTER_SECTION}>
       {/* Type filter row */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-14 shrink-0">
+      <div className={FILTER_ROW}>
+        <span className={TEXT_FILTER_LABEL}>
           type
         </span>
         <button
           onClick={() => onCategoryChange("all")}
-          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
-            border transition-all
-            ${activeCategory === "all" ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
+          className={activeCategory === "all" ? BTN_PILL_ACTIVE_CATEGORY : BTN_PILL_INACTIVE}
         >
           all
         </button>
@@ -53,9 +62,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onCategoryChange(key)}
-            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
-              border transition-all
-              ${activeCategory === key ? "border-text-muted text-text-primary bg-surface-hover" : "border-border text-text-faint hover:text-text-muted"}`}
+            className={activeCategory === key ? BTN_PILL_ACTIVE_CATEGORY : BTN_PILL_INACTIVE}
           >
             {CATEGORIES[key].label}
           </button>
@@ -63,15 +70,13 @@ export default function Filters({
       </div>
 
       {/* Topic filter row */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="font-mono text-sm tracking-[0.15em] uppercase text-text-faint w-14 shrink-0">
+      <div className={FILTER_ROW}>
+        <span className={TEXT_FILTER_LABEL}>
           life
         </span>
         <button
           onClick={() => onTopicChange("all")}
-          className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
-            border transition-all
-            ${activeTopic === "all" ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
+          className={activeTopic === "all" ? BTN_PILL_ACTIVE_TOPIC : BTN_PILL_INACTIVE}
         >
           all
         </button>
@@ -79,9 +84,7 @@ export default function Filters({
           <button
             key={key}
             onClick={() => onTopicChange(key)}
-            className={`px-3 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 rounded-full font-mono text-sm tracking-wider uppercase
-              border transition-all
-              ${activeTopic === key ? "border-accent/50 text-accent bg-accent/10" : "border-border text-text-faint hover:text-text-muted"}`}
+            className={activeTopic === key ? BTN_PILL_ACTIVE_TOPIC : BTN_PILL_INACTIVE}
           >
             {TOPICS[key].label}
           </button>
@@ -98,22 +101,18 @@ export default function Filters({
             if (e.key === "Enter") submitSearch();
           }}
           placeholder="search entries..."
-          className="flex-1 sm:flex-none sm:w-56 bg-surface border border-border rounded px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0
-            font-mono text-sm sm:text-xs text-text-primary tracking-wide placeholder:text-text-faint
-            outline-none focus:border-accent/50 transition-colors"
+          className={`flex-1 sm:flex-none sm:w-56 ${INPUT_TEXT} sm:text-xs`}
         />
         <button
           onClick={submitSearch}
-          className="px-4 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-surface border border-accent/40 text-accent rounded
-            font-mono text-sm tracking-wider uppercase transition-all
-            hover:bg-accent hover:text-bg"
+          className={BTN_SEARCH_GO}
         >
           go
         </button>
         {search && (
           <button
             onClick={clearSearch}
-            className="px-3 py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 font-mono text-sm text-text-faint hover:text-signal transition-colors"
+            className={BTN_SEARCH_CLEAR}
           >
             clear
           </button>

@@ -3,6 +3,12 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import MicButton from "./mic-button";
 import { detectEmotion } from "@/lib/emotional-detect";
+import {
+  INPUT_TEXTAREA,
+  BTN_PRIMARY,
+  ALERT_SIGNAL,
+  TEXT_META,
+} from "@/lib/design-tokens";
 
 interface ComposeProps {
   onSaved: () => void;
@@ -125,9 +131,7 @@ export default function Compose({ onSaved }: ComposeProps) {
             onKeyDown={handleKeyDown}
             placeholder={listening ? "listening..." : "type a thought, paste a link, or speak..."}
             rows={3}
-            className={`w-full bg-transparent text-lg leading-relaxed
-              resize-none outline-none placeholder:italic font-serif
-              ${listening ? "text-text-primary placeholder:text-signal" : "text-text-primary placeholder:text-text-faint"}`}
+            className={`${INPUT_TEXTAREA} ${listening ? "placeholder:text-signal" : ""}`}
           />
           {/* Live interim text shown below textarea */}
           {listening && interim && (
@@ -142,7 +146,7 @@ export default function Compose({ onSaved }: ComposeProps) {
 
         {/* Emotional guidance — instant, before save */}
         {emotion.detected && (
-          <div className="mt-3 px-3 py-2.5 rounded-md bg-signal/10 border border-signal/20 animate-fade-in">
+          <div className={`mt-3 px-3 py-2.5 ${ALERT_SIGNAL} animate-fade-in`}>
             <p className="text-sm text-text-primary leading-relaxed">
               <span className="text-signal font-mono text-xs mr-2">&#9679;</span>
               {emotion.guidance}
@@ -151,7 +155,7 @@ export default function Compose({ onSaved }: ComposeProps) {
         )}
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-3 pt-3 border-t border-border">
-          <p className="font-mono text-sm text-text-faint tracking-wide">
+          <p className={TEXT_META}>
             {listening ? (
               <span className="text-signal flex items-center gap-1.5">
                 <span className="flex gap-0.5">
@@ -179,10 +183,7 @@ export default function Compose({ onSaved }: ComposeProps) {
             <button
               onClick={handleSave}
               disabled={!content.trim() || saving}
-              className="bg-transparent border border-accent text-accent rounded px-4 py-2.5 min-h-[44px]
-                font-mono text-sm tracking-[0.15em] uppercase transition-all
-                hover:bg-accent hover:text-bg disabled:opacity-30 disabled:hover:bg-transparent
-                disabled:hover:text-accent"
+              className={`${BTN_PRIMARY} disabled:hover:bg-transparent disabled:hover:text-accent`}
             >
               {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl ? "analyze" : "plant"}
             </button>

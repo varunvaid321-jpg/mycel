@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  CARD_SECTION,
+  TEXT_SECTION_HEADER,
+  TEXT_SUBSECTION_HEADER,
+  TEXT_BULLET,
+} from "@/lib/design-tokens";
 
 interface AIReview {
   topFocusAreas: { topic: string; count: number }[];
@@ -34,13 +40,13 @@ export default function MonthlyReview() {
   const ai = data.aiReview;
 
   return (
-    <div className="bg-surface border border-border border-l-[3px] border-l-network/60 rounded-lg p-5 md:p-6 mb-8 animate-fade-in">
+    <div className={`${CARD_SECTION} border-l-[3px] border-l-network/60`}>
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="w-full flex items-center gap-2"
       >
         <span className="w-2 h-2 rounded-full bg-network/60" />
-        <span className="font-mono text-sm tracking-[0.2em] uppercase text-network/80">
+        <span className={`${TEXT_SECTION_HEADER} text-network/80`}>
           Monthly Review
         </span>
         <span className="ml-auto font-mono text-sm text-text-faint">
@@ -65,7 +71,7 @@ export default function MonthlyReview() {
             <>
               {ai.topFocusAreas.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Where Your Attention Went
                   </h3>
                   <div className="space-y-1">
@@ -93,12 +99,12 @@ export default function MonthlyReview() {
 
               {ai.keyDecisions.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Key Decisions
                   </h3>
                   <ul className="space-y-1">
                     {ai.keyDecisions.map((d, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
                         <span className="text-fruit font-mono text-xs mt-0.5 shrink-0">&#x25cf;</span>
                         <span>{d}</span>
                       </li>
@@ -109,12 +115,12 @@ export default function MonthlyReview() {
 
               {ai.circlingThemes.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Still Circling
                   </h3>
                   <ul className="space-y-1">
                     {ai.circlingThemes.map((c, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-text-muted">
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET} text-text-muted`}>
                         <span className="text-signal font-mono text-xs mt-0.5 shrink-0">&#x21bb;</span>
                         <span>{c}</span>
                       </li>
@@ -125,12 +131,12 @@ export default function MonthlyReview() {
 
               {ai.shiftedTopics.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     What Shifted
                   </h3>
                   <ul className="space-y-1">
                     {ai.shiftedTopics.map((s, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-text-muted">
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET} text-text-muted`}>
                         <span className="text-decompose font-mono text-xs mt-0.5 shrink-0">&darr;</span>
                         <span>{s}</span>
                       </li>
@@ -152,7 +158,7 @@ export default function MonthlyReview() {
               {/* Fallback stats */}
               {data.topFocusAreas.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Top Focus Areas
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -171,12 +177,12 @@ export default function MonthlyReview() {
 
               {data.keyDecisions.length > 0 && (
                 <div>
-                  <h3 className="font-mono text-sm tracking-[0.15em] uppercase text-text-muted mb-2">
+                  <h3 className={TEXT_SUBSECTION_HEADER}>
                     Decisions Made
                   </h3>
                   <ul className="space-y-1">
                     {data.keyDecisions.map((d, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
                         <span className="text-fruit font-mono text-xs mt-0.5 shrink-0">&#x2713;</span>
                         <span>{d}</span>
                       </li>

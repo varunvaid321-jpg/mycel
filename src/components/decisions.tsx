@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  CARD,
+  BORDER_FRUIT,
+  TEXT_SECTION_HEADER,
+  TEXT_META,
+  TEXT_EMPTY,
+} from "@/lib/design-tokens";
 
 interface LinkedEntry {
   id: string;
@@ -49,7 +56,7 @@ export default function Decisions({ visible }: DecisionsProps) {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <span className="font-mono text-xs text-text-faint tracking-wider">loading decisions...</span>
+        <span className={TEXT_EMPTY}>loading decisions...</span>
       </div>
     );
   }
@@ -57,7 +64,7 @@ export default function Decisions({ visible }: DecisionsProps) {
   if (decisions.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="font-mono text-xs text-text-faint tracking-wider">
+        <p className={TEXT_EMPTY}>
           no decisions yet &mdash; fruit entries will appear here
         </p>
       </div>
@@ -66,19 +73,19 @@ export default function Decisions({ visible }: DecisionsProps) {
 
   return (
     <div className="space-y-4 mb-6">
-      <h2 className="font-mono text-sm tracking-[0.2em] uppercase text-fruit/80">
+      <h2 className={`${TEXT_SECTION_HEADER} text-fruit/80`}>
         Decision Trail
       </h2>
       {decisions.map((d) => (
         <div
           key={d.id}
-          className="bg-surface border border-border border-l-[3px] border-l-fruit/60 rounded-lg p-4 animate-fade-in"
+          className={`${CARD} ${BORDER_FRUIT} p-4 animate-fade-in`}
         >
           <div className="flex items-center gap-2 mb-2">
             <span className="font-mono text-sm tracking-wider uppercase text-fruit/70 px-1.5 py-0.5 bg-fruit/10 rounded">
               fruit
             </span>
-            <span className="font-mono text-sm text-text-faint">
+            <span className={TEXT_META}>
               {d.localDate} &middot; {d.localTime}
             </span>
           </div>

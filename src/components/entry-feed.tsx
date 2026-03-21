@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import EntryCard from "./entry-card";
+import { TEXT_EMPTY } from "@/lib/design-tokens";
 
 interface Entry {
   id: string;
@@ -51,7 +52,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
   if (loading && entries.length === 0) {
     return (
       <div className="text-center py-12">
-        <span className="font-mono text-xs text-text-faint tracking-wider">
+        <span className={TEXT_EMPTY}>
           loading...
         </span>
       </div>
@@ -62,7 +63,7 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
     return (
       <div className="text-center py-16">
         <div className="text-3xl mb-3 opacity-30">&#x1F344;</div>
-        <p className="font-mono text-xs text-text-faint tracking-wider">
+        <p className={TEXT_EMPTY}>
           nothing here yet — plant your first thought
         </p>
       </div>
