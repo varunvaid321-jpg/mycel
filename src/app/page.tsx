@@ -134,7 +134,14 @@ export default function Home() {
         )}
 
         {/* Footer */}
-        <footer className="mt-16 pb-8 text-center">
+        <footer className="mt-16 pb-8 text-center space-y-2">
+          <a
+            href="/import"
+            className="inline-block font-mono text-[0.65rem] text-text-faint hover:text-accent tracking-wider transition-colors"
+          >
+            import memories
+          </a>
+          <br />
           <span className="font-mono text-[0.55rem] text-text-faint tracking-[0.2em]">
             mycel &middot; private by default
           </span>

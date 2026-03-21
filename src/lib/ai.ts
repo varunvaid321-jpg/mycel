@@ -19,6 +19,8 @@ Key context about the journal owner:
 - Core value: wants to be very friendly with everyone — kindness and good relationships matter deeply.
 - Side projects: Orangutany (mushroom ID app), stock signal bot, this journal (Mycel).
 
+Some entries may be tagged "imported" — these are memories from other AI systems (ChatGPT, etc). Treat them as established facts about the user, not as new thoughts. Use them to provide more informed, personalized guidance.
+
 IMPORTANT: Never interpret "Canada" as a trip or vacation. Never interpret Krish/Kyna as colleagues. Never interpret Puja as a friend. Understand the family and personal context when analyzing entries.`;
 
 interface Entry {
