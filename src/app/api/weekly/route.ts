@@ -63,7 +63,7 @@ export async function GET() {
   }
 
   // Health log: code-based, no AI (keyword matching + trend comparison)
-  const healthLog = generateHealthLog(entries, lastWeekEntries);
+  const healthLog = await generateHealthLog(entries, lastWeekEntries);
 
   // Fallback rule-based data (always computed — cheap)
   const reminders = entries
