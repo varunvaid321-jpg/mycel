@@ -111,8 +111,7 @@ export interface HealthDayLog {
 
 export interface AIHealthLog {
   days: HealthDayLog[];
-  insight: string;
-  motivation: string;
+  summary: string;
 }
 
 export interface AIMonthlyReview {
@@ -395,43 +394,112 @@ Return JSON:
 
 // ── Health Log ──────────────────────────────────────────────
 
-export async function generateHealthLog(
-  entries: Entry[]
-): Promise<AIHealthLog | null> {
-  if (entries.length === 0) return null;
+// ── Workout Log (100% code — no AI, no hallucination) ────────
 
-  // Only last 5 days, exclude imported entries
+const EXERCISE_KEYWORDS = {
+  cardio: [/\bwalk(ed|ing|s)?\b/i, /\brun(ning|s|n)?\b/i, /\bjog(ging|ged)?\b/i, /\bcycl(e|ing|ed)\b/i, /\bswi(m|mming|am)\b/i, /\bcardio\b/i, /\bsteps\b/i, /\bhik(e|ing|ed)\b/i, /\bskipping\s+rope\b/i, /\bjump(ed|ing)?\s+rope\b/i, /\bsprints?\b/i, /\bstair(s|case)?\b/i],
+  weights: [/\bgym\b/i, /\bweights?\b/i, /\bpush[-\s]?ups?\b/i, /\bsquats?\b/i, /\bdeadlift/i, /\bbench\s*(press)?\b/i, /\blift(ing|ed)?\b/i, /\bdumbbell/i, /\bexercis(e|ed|ing)\b/i, /\bworkout\b/i, /\bwork(ed|ing)?\s+out\b/i, /\bplanks?\b/i, /\bcrunches?\b/i, /\bsit[-\s]?ups?\b/i, /\bburpees?\b/i, /\bkettlebell/i, /\bresistance\b/i, /\breps?\b/i, /\bsets?\s+of\b/i],
+  sport: [/\bcricket\b/i, /\bbadminton\b/i, /\btennis\b/i, /\btable\s+tennis\b/i, /\bbasketball\b/i, /\bfootball\b/i, /\bsoccer\b/i, /\bplay(ed|ing)\b/i, /\byoga\b/i, /\bstretch(ing|ed)?\b/i, /\bmeditat(e|ed|ing|ion)\b/i, /\bpranayam\b/i, /\bbreathing\s+exercis/i, /\bpilates\b/i, /\bboxing\b/i, /\bmartial\s+arts?\b/i, /\bvolleyball\b/i, /\bgolf(ed|ing)?\b/i, /\bskat(e|ed|ing)\b/i, /\bdanc(e|ed|ing)\b/i, /\btai\s+chi\b/i, /\bmindfulness\b/i, /\bmental\s+workout\b/i, /\bbrain\s+training\b/i],
+};
+
+const NEGATIVE_PATTERNS = [
+  /\b(did\s+not|didn'?t|couldn'?t|can'?t|won'?t|not\s+able)\b.*\b(exercise|workout|work\s+out|play|gym|run|walk|swim)/i,
+  /\bskipped?\b.*\b(exercise|workout|work\s+out|gym)/i,
+  /\bwanted\s+to\s+but\b/i,
+  /\bno\s+(workout|exercise|gym)\b/i,
+  /\brest\s+day\b/i,
+];
+
+function detectExerciseType(text: string): { cardio: boolean; weights: boolean; sport: boolean } {
+  return {
+    cardio: EXERCISE_KEYWORDS.cardio.some((r) => r.test(text)),
+    weights: EXERCISE_KEYWORDS.weights.some((r) => r.test(text)),
+    sport: EXERCISE_KEYWORDS.sport.some((r) => r.test(text)),
+  };
+}
+
+function isExerciseEntry(text: string): boolean {
+  // Check negative context first
+  if (NEGATIVE_PATTERNS.some((r) => r.test(text))) return false;
+  // Check if any exercise keyword matches
+  const types = detectExerciseType(text);
+  return types.cardio || types.weights || types.sport;
+}
+
+export function generateHealthLog(
+  thisWeekEntries: Entry[],
+  lastWeekEntries: Entry[]
+): AIHealthLog | null {
+  // Filter to last 5 days, exclude imported
   const fiveDaysAgo = new Date();
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-  const recent = entries.filter(
+  const recent = thisWeekEntries.filter(
     (e) => new Date(e.createdAt) >= fiveDaysAgo && !e.tags?.includes("imported")
   );
-  if (recent.length === 0) return null;
 
-  const formatted = formatEntries(recent);
+  // Find exercise entries and group by day
+  const dayGroups: Record<string, string[]> = {};
+  const dayOrder: string[] = [];
+  const allTypes = { cardio: false, weights: false, sport: false };
 
-  const result = await ask(
-    `Read these journal entries. Find ONLY mentions of gym, workout, exercise, running, walking, swimming, cycling, weights, stretching, or sports. Nothing else — no sleep, no diet, no hydration, no fasting, no mental health.
+  for (const e of recent) {
+    if (!isExerciseEntry(e.content)) continue;
+    const types = detectExerciseType(e.content);
+    if (types.cardio) allTypes.cardio = true;
+    if (types.weights) allTypes.weights = true;
+    if (types.sport) allTypes.sport = true;
 
-RULES:
-- Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
-- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
-- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
-- If NO entries mention any exercise at all, return {"days": [], "insight": "", "motivation": ""}
-- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual, past tense.
-- The "motivation" field: one short line. Keep it real, not cheesy. Motivate to keep going or do more.
-- Use "you" — speak directly
+    const dow = dayOfWeek(e.localDate);
+    const dateKey = `${dow ? dow + " " : ""}${e.localDate}`.trim();
+    if (!dayGroups[dateKey]) {
+      dayGroups[dateKey] = [];
+      dayOrder.push(dateKey);
+    }
+    // Truncate individual entry to 100 chars
+    const text = e.content.length > 100 ? e.content.slice(0, 97) + "..." : e.content;
+    dayGroups[dateKey].push(text);
+  }
 
-Entries:
-${formatted}
+  if (dayOrder.length === 0) return null;
 
-IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
+  // Build day entries (raw text, combined per day)
+  const days: HealthDayLog[] = dayOrder.map((dateKey) => ({
+    date: dateKey,
+    summary: dayGroups[dateKey].join(". ").replace(/\.\./g, "."),
+  }));
 
-Return JSON:
-{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "insight": "one observation", "motivation": "one line"}`,
-    "health-log"
-  );
+  // Count this week vs last week workout days
+  const thisWeekDays = dayOrder.length;
+  const lastWeekExerciseDays = new Set<string>();
+  for (const e of lastWeekEntries) {
+    if (!e.tags?.includes("imported") && isExerciseEntry(e.content)) {
+      lastWeekExerciseDays.add(e.localDate);
+    }
+  }
+  const lastWeekDays = lastWeekExerciseDays.size;
 
-  if (!result) return null;
-  return parseJSON<AIHealthLog>(result, "health-log");
+  // Build summary: count + trend + type nudge
+  let trend = "";
+  if (lastWeekDays === 0) {
+    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week.`;
+  } else if (thisWeekDays > lastWeekDays) {
+    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, up from ${lastWeekDays} last week.`;
+  } else if (thisWeekDays === lastWeekDays) {
+    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, same as last week.`;
+  } else {
+    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, down from ${lastWeekDays} last week.`;
+  }
+
+  // Type nudge
+  const typeCount = [allTypes.cardio, allTypes.weights, allTypes.sport].filter(Boolean).length;
+  let nudge = "";
+  if (typeCount === 1) {
+    if (allTypes.cardio) nudge = " Try adding weights or a sport next week.";
+    else if (allTypes.weights) nudge = " Mix in cardio or a sport next week?";
+    else if (allTypes.sport) nudge = " Add some weights or cardio to complement.";
+  } else if (typeCount >= 2) {
+    nudge = " Good mix — keep it going.";
+  }
+
+  return { days, summary: trend + nudge };
 }

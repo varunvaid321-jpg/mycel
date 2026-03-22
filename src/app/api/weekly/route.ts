@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { generateWeeklyBrief, generateHealthLog, type AIWeeklyBrief, type AIHealthLog } from "@/lib/ai";
+import { generateWeeklyBrief, generateHealthLog, type AIWeeklyBrief } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +13,11 @@ let cachedEntryCount = -1;
 let cachedAt = 0;
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
 
-let cachedHealthLog: AIHealthLog | null = null;
-let cachedHealthCount = -1;
-let cachedHealthAt = 0;
-
 export async function GET() {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
   const entries = await prisma.entry.findMany({
     where: {
@@ -27,6 +25,14 @@ export async function GET() {
       archived: false,
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  // Last week's entries for workout trend comparison
+  const lastWeekEntries = await prisma.entry.findMany({
+    where: {
+      createdAt: { gte: twoWeeksAgo, lt: weekAgo },
+      archived: false,
+    },
   });
 
   // Category breakdown
@@ -56,23 +62,8 @@ export async function GET() {
     }
   }
 
-  // Health log: separate cache, same invalidation logic
-  const healthCacheValid =
-    cachedHealthLog &&
-    cachedHealthCount === entries.length &&
-    now - cachedHealthAt < CACHE_MAX_AGE_MS;
-
-  let healthLog: AIHealthLog | null;
-  if (healthCacheValid) {
-    healthLog = cachedHealthLog;
-  } else {
-    healthLog = await generateHealthLog(entries);
-    if (healthLog) {
-      cachedHealthLog = healthLog;
-      cachedHealthCount = entries.length;
-      cachedHealthAt = now;
-    }
-  }
+  // Health log: code-based, no AI (keyword matching + trend comparison)
+  const healthLog = generateHealthLog(entries, lastWeekEntries);
 
   // Fallback rule-based data (always computed — cheap)
   const reminders = entries
