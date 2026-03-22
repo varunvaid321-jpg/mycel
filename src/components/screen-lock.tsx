@@ -43,12 +43,20 @@ export default function ScreenLock({ children }: ScreenLockProps) {
       }
     }
 
+    // Lock on bfcache restore (mobile Chrome restores JS state from memory)
+    function handlePageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        lock();
+      }
+    }
+
     // Reset idle timer on any interaction
     function handleActivity() {
       if (!locked) resetIdleTimer();
     }
 
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pageshow", handlePageShow);
     document.addEventListener("touchstart", handleActivity);
     document.addEventListener("mousedown", handleActivity);
     document.addEventListener("keydown", handleActivity);
@@ -59,6 +67,7 @@ export default function ScreenLock({ children }: ScreenLockProps) {
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("touchstart", handleActivity);
       document.removeEventListener("mousedown", handleActivity);
       document.removeEventListener("keydown", handleActivity);
