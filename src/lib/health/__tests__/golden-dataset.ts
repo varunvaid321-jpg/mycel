@@ -174,4 +174,39 @@ export const GOLDEN_DATASET: GoldenEntry[] = [
     shouldInclude: false,
     excludeReason: "intention_only",
   },
+
+  // ── Mixed / Edge Cases ──
+  {
+    id: "g26",
+    content: "I wanted to go to the gym but ended up doing 20 push-ups at home instead.",
+    shouldInclude: true,
+    expectedPhrase: "doing 20 push-ups at home",
+    expectedType: "strength",
+  },
+  {
+    id: "g27",
+    content: "Dropped Kyna at her swimming class, then I walked 3km back home.",
+    shouldInclude: true,
+    expectedPhrase: "walked 3km back home",
+    expectedType: "walking",
+  },
+  {
+    id: "g28",
+    content: "learn swimming next month, but today I did some stretching and yoga.",
+    shouldInclude: true,
+    expectedPhrase: "did some stretching and yoga",
+    expectedType: "mobility",
+  },
+  {
+    id: "g29",
+    content: "Krish played cricket all day. I just watched from the side.",
+    shouldInclude: false,
+    excludeReason: "third_person_only",
+  },
+  {
+    id: "g30",
+    content: "did stuff at home, nothing much, lazy day.",
+    shouldInclude: false,
+    excludeReason: "no_health_signal",
+  },
 ];

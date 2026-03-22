@@ -4,7 +4,10 @@ import type { LLMProvider } from "./provider";
 import type { HealthSignal, JournalEntry } from "./types";
 import { isValidHealthSignal, MAX_LABEL_LENGTH } from "./types";
 
-const EXTRACTION_PROMPT = `You analyze journal entries for COMPLETED physical activity only. Return a JSON array.
+const EXTRACTION_PROMPT = `You analyze journal entries for COMPLETED PHYSICAL ACTIVITY only. Return a JSON array.
+
+Physical activity means: exercise, sports, gym, walking, running, swimming, yoga, stretching, push-ups, weights, cycling, etc.
+NOT physical activity — EXCLUDE: eating, cooking, diet, food, recipes, supplements, vitamins, ginger, oats, sleep, rest, meditation thoughts, emotional states, work meetings.
 
 COMPLETED means past tense: "did", "completed", "went", "played", "walked", "ran", "swam".
 NOT completed — EXCLUDE these: "want to", "need to", "should", "planning to", "learn", "going to", "hope to", "thinking about", "might", "tomorrow", "try to", "explore", "research".

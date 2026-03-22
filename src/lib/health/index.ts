@@ -14,8 +14,8 @@ let cachedHealth: HealthMonitorOutput | null = null;
 let cachedKey = "";
 let cachedAt = 0;
 let cachedIsNull = false;
-const CACHE_TTL = 5 * 60 * 1000;       // 5 min for valid results
-const NULL_CACHE_TTL = 2 * 60 * 1000;   // 2 min for failures
+const CACHE_TTL = 10 * 60 * 1000;      // 10 min for valid results
+const NULL_CACHE_TTL = 3 * 60 * 1000;   // 3 min for failures
 
 function buildCacheKey(entries: JournalEntry[]): string {
   const count = entries.length;

@@ -43,7 +43,7 @@ function isThirdPersonEntry(sourceContent: string): boolean {
   const hasThirdPerson = Array.from(THIRD_PERSON_INDICATORS).some((w) => norm.includes(w));
   if (!hasThirdPerson) return false;
 
-  const hasActivity = /\b(dance|swim|swimming|soccer|volleyball|walk|walking|exercise|sport|active|gym|yoga|run|running)\b/.test(norm);
+  const hasActivity = /\b(dance|swim|swimming|soccer|volleyball|walk|walking|exercise|sport|active|gym|yoga|run|running|cricket|badminton|tennis|football|basketball|cycling|played|playing)\b/.test(norm);
   if (!hasActivity) return false;
 
   // If the entry has first-person AND third-person + activity, check if it's about "we"
@@ -53,6 +53,7 @@ function isThirdPersonEntry(sourceContent: string): boolean {
     // "I asked her to walk" = exclude (first person is NOT doing the activity)
     if (/\b(ask(ed|ing)?|told|tell(ing)?|want(ed|s)?|ensure|make sure)\b/.test(norm)) return true;
     if (/\b(select|pick|buy|choose)\b/.test(norm)) return true;
+    if (/\b(watch(ed|ing)?|saw|observ(ed|ing)?|cheer(ed|ing)?)\b/.test(norm)) return true; // observer, not participant
     return false; // "we played" case
   }
 
