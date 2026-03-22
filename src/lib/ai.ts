@@ -455,7 +455,7 @@ async function askGroq(text: string): Promise<string | null> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: "Extract ONLY the physical activity from this journal entry. Use the person's exact words. Max 15 words. If no exercise happened, return NONE. Never add details not in the text." },
           { role: "user", content: text },
