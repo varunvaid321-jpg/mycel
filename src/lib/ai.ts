@@ -400,28 +400,44 @@ export async function generateHealthLog(
   );
   if (recent.length === 0) return null;
 
-  const formatted = formatEntries(recent);
+  // Pre-group entries by day PROGRAMMATICALLY so the AI can't skip any day
+  const dayGroups: Record<string, string[]> = {};
+  const dayOrder: string[] = [];
+  for (const e of recent) {
+    const dow = dayOfWeek(e.localDate);
+    const dateKey = `${dow ? dow + " " : ""}${e.localDate}`.trim();
+    if (!dayGroups[dateKey]) {
+      dayGroups[dateKey] = [];
+      dayOrder.push(dateKey);
+    }
+    dayGroups[dateKey].push(e.content);
+  }
+
+  // Build a structured input: each day with its raw entries
+  const dayBlocks = dayOrder
+    .map((dateKey) => {
+      const contents = dayGroups[dateKey].map((c, i) => `  ${i + 1}. ${c}`).join("\n");
+      return `${dateKey}:\n${contents}`;
+    })
+    .join("\n\n");
 
   const result = await ask(
-    `Read these journal entries. Extract ONLY days where the person actually exercised or worked out (gym, running, walking, swimming, cycling, weights, stretching, sports).
+    `Summarize what this person did each day. You MUST include ALL ${dayOrder.length} days listed below — do NOT skip any.
 
-CRITICAL RULES:
-- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER infer, guess, or add exercises that aren't explicitly written. If an entry says "gym and push-ups", say exactly that — do NOT add muscle groups or exercises that aren't mentioned.
-- Strip out anything that isn't exercise (e.g. "planning for family activities" is NOT exercise — exclude it).
-- Each day: one short blunt PAST TENSE sentence using ONLY the user's own words for what they did.
-- Only include days where they actually exercised. No exercise that day = skip it entirely.
-- If multiple entries on the same day mention different workouts, combine them into one line.
-- If NO entries mention any exercise at all, return {"days": [], "summary": ""}
-- The "summary" field: exactly ONE sentence. Factual count of sessions + short motivation. Use "you" — speak directly.
-- This is a review read AFTER the fact — always past tense, never present tense.
+RULES:
+- For each day: write ONE short sentence summarizing what was done. Past tense. Use "you".
+- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER add, infer, or guess anything not written. If an entry says "gym and push-ups", say exactly that — do NOT add "chest" or other details not mentioned.
+- If a day has multiple entries, combine the key points into one sentence.
+- Keep each summary short and blunt (under 20 words).
+- The "summary" field: ONE motivational sentence about the overall 5-day period. Keep it real and direct.
 
-Entries:
-${formatted}
+DAYS AND ENTRIES:
+${dayBlocks}
 
-IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided. Include ALL exercise entries — do not skip any.
+You MUST return exactly ${dayOrder.length} days in the "days" array, in this order: ${dayOrder.map((d) => `"${d}"`).join(", ")}.
 
 Return JSON:
-{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "summary": "one sentence for the week"}`,
+{"days": [{"date": "day label exactly as given", "summary": "what you did"}], "summary": "one sentence"}`,
     "health-log"
   );
 
