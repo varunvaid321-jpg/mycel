@@ -20,6 +20,16 @@ interface AIBrief {
   prioritizedActions: string[];
 }
 
+interface HealthDayLog {
+  date: string;
+  summary: string;
+}
+
+interface HealthLog {
+  days: HealthDayLog[];
+  momentum: string;
+}
+
 interface WeeklyData {
   totalEntries: number;
   breakdown: Record<string, number>;
@@ -29,6 +39,7 @@ interface WeeklyData {
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
   aiBrief: AIBrief | null;
+  healthLog: HealthLog | null;
 }
 
 export default function WeeklySummary() {
@@ -130,6 +141,30 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Health Log */}
+              {data.healthLog && data.healthLog.days.length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
+                    Your Health This Week
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {data.healthLog.days.map((day, i) => (
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                          {day.date}
+                        </span>
+                        <span className="text-text-muted">{day.summary}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {data.healthLog.momentum && (
+                    <p className="mt-3 text-sm text-spore/90 italic">
+                      {data.healthLog.momentum}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
               </p>
@@ -175,6 +210,30 @@ export default function WeeklySummary() {
                     <BulletItem key={i} icon="~" color="text-decompose" text={l} />
                   ))}
                 </Section>
+              )}
+
+              {/* Health Log (also shown in fallback mode) */}
+              {data.healthLog && data.healthLog.days.length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
+                    Your Health This Week
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {data.healthLog.days.map((day, i) => (
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                          {day.date}
+                        </span>
+                        <span className="text-text-muted">{day.summary}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {data.healthLog.momentum && (
+                    <p className="mt-3 text-sm text-spore/90 italic">
+                      {data.healthLog.momentum}
+                    </p>
+                  )}
+                </div>
               )}
 
               <p className={TEXT_NOTE}>
