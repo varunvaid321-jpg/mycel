@@ -190,7 +190,7 @@ export default function MonthlyReview() {
               )}
 
               <p className={TEXT_NOTE}>
-                basic stats &middot; add ANTHROPIC_API_KEY for ai review
+                basic stats
               </p>
             </>
           )}

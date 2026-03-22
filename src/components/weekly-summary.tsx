@@ -237,7 +237,7 @@ export default function WeeklySummary() {
               )}
 
               <p className={TEXT_NOTE}>
-                rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
+                rule-based summary
               </p>
             </>
           )}

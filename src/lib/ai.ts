@@ -403,6 +403,7 @@ const EXERCISE_KEYWORDS = {
 };
 
 const NEGATIVE_PATTERNS = [
+  // Didn't do it
   /\b(did\s+not|didn'?t|couldn'?t|can'?t|won'?t|not\s+able)\b.*\b(exercise|workout|work\s+out|play|gym|run|walk|swim|motivat)/i,
   /\bskipped?\b.*\b(exercise|workout|work\s+out|gym)/i,
   /\bwanted?\s+to\s+but\b/i,
@@ -411,7 +412,12 @@ const NEGATIVE_PATTERNS = [
   /\bdon'?t\s+feel\s+motivat/i,
   /\bunable\s+to\s+(get|exercise|work|move)/i,
   /\bletharg/i,
-  /\bwant\s+to\s+(start|work|exercise|gym)\b.*\bbut\b/i,
+  // Intention / planning, not completed
+  /\b(need|going|plan(ning)?|want|hope|try(ing)?|must|have)\s+to\s+(do|start|go|hit|get|begin)\b.*\b(push[-\s]?ups?|gym|workout|work\s+out|exercise|run|walk|swim|yoga)/i,
+  /\bshould\s+(go|do|start|hit|try|get)\b.*\b(push[-\s]?ups?|gym|workout|work\s+out|exercise|run|walk|swim|yoga)/i,
+  /\bwant\s+to\s+(start|work|exercise|gym)\b/i,
+  /\bget\s+started\s+for\s+the\s+day\b/i,
+  // About other people
   /\b(ensure|make\s+sure|tell|ask|want)\b.*\b(kyna|krish|puja|kids?|daughter|son|wife)\b.*\b(swim|soccer|volleyball|exercise|active|sport)/i,
 ];
 
