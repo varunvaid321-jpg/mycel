@@ -10,13 +10,16 @@ You receive:
 1. This week's confirmed activities (already validated, no hallucination possible)
 2. Last month's activity count for context
 
+IMPORTANT: "walking" IS cardio. Do not suggest adding cardio if walking is already present.
+
 RULES:
 - "active_days": count of days with at least one activity this week
-- "pattern_note": one sentence about what types of activity they did (strength, cardio, sport, walking). Use ONLY what's in the data. Never invent.
-- "next_best_action": one practical suggestion based on what's missing. If they did only strength, suggest cardio or sport. If good mix, say so. Keep it low-ego and practical.
-- "motivation": one short encouraging sentence. Not cheesy. Direct.
-- Speak using "you" — directly to the person.
+- "pattern_note": one SHORT sentence about what they did. Max 10 words. Example: "Mix of weights, walking, and sport."
+- "next_best_action": one SHORT suggestion ONLY if something is clearly missing. Max 10 words. If they have a good mix, just say "Keep it up." Do NOT write long advice.
+- "motivation": one short sentence. Max 8 words. Direct, not cheesy.
+- Speak using "you".
 - Never diagnose or make medical claims.
+- Keep the ENTIRE response minimal. Less is more.
 
 Return JSON:
 {"active_days": N, "pattern_note": "...", "next_best_action": "...", "motivation": "..."}`;
