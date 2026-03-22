@@ -27,8 +27,7 @@ interface HealthDayLog {
 
 interface HealthLog {
   days: HealthDayLog[];
-  insight: string;
-  motivation: string;
+  summary: string;
 }
 
 interface WeeklyData {
@@ -151,21 +150,16 @@ export default function WeeklySummary() {
                   <ul className="space-y-1.5">
                     {data.healthLog.days.map((day, i) => (
                       <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
                         </span>
                         <span className="text-text-muted">{day.summary}</span>
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.insight && (
-                    <p className="mt-3 text-sm text-text-muted">
-                      {data.healthLog.insight}
-                    </p>
-                  )}
-                  {data.healthLog.motivation && (
-                    <p className="mt-2 text-sm text-spore/90 italic">
-                      {data.healthLog.motivation}
+                  {data.healthLog.summary && (
+                    <p className="mt-3 text-sm text-spore/90 italic">
+                      {data.healthLog.summary}
                     </p>
                   )}
                 </div>
@@ -227,21 +221,16 @@ export default function WeeklySummary() {
                   <ul className="space-y-1.5">
                     {data.healthLog.days.map((day, i) => (
                       <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
                         </span>
                         <span className="text-text-muted">{day.summary}</span>
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.insight && (
-                    <p className="mt-3 text-sm text-text-muted">
-                      {data.healthLog.insight}
-                    </p>
-                  )}
-                  {data.healthLog.motivation && (
-                    <p className="mt-2 text-sm text-spore/90 italic">
-                      {data.healthLog.motivation}
+                  {data.healthLog.summary && (
+                    <p className="mt-3 text-sm text-spore/90 italic">
+                      {data.healthLog.summary}
                     </p>
                   )}
                 </div>
