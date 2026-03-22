@@ -70,14 +70,15 @@ export async function POST(request: Request) {
   let content: string;
   let localDate: string;
   let localTime: string;
-  let imageFile: File | null = null;
+  let imageFiles: File[] = [];
 
   if (contentType.includes("multipart/form-data")) {
     const formData = await request.formData();
     content = (formData.get("content") as string) || "";
     localDate = (formData.get("localDate") as string) || "";
     localTime = (formData.get("localTime") as string) || "";
-    imageFile = formData.get("image") as File | null;
+    const images = formData.getAll("image") as File[];
+    imageFiles = images.filter((f) => f && f.size > 0).slice(0, 3);
   } else {
     const body = await request.json();
     content = body.content || "";
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   // Allow empty content if there's an image
-  if (!content?.trim() && !imageFile) {
+  if (!content?.trim() && imageFiles.length === 0) {
     return NextResponse.json({ error: "content or image required" }, { status: 400 });
   }
 
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
 
   // Auto-classify (on corrected text for better accuracy)
   const { category, topics } = corrected ? classify(corrected) : { category: "spore", topics: [] as string[] };
+  const hasImages = imageFiles.length > 0;
 
   // Auto-link: if fruit, find related recent spores/signals by keyword overlap
   let linkedEntryIds = "";
@@ -139,7 +141,7 @@ export async function POST(request: Request) {
 
   const entry = await prisma.entry.create({
     data: {
-      content: corrected || (imageFile ? "📷" : ""),
+      content: corrected || (hasImages ? "📷" : ""),
       category,
       tags: topics.join(","),
       localDate,
@@ -148,31 +150,38 @@ export async function POST(request: Request) {
     },
   });
 
-  // Save image if provided
-  if (imageFile && imageFile.size > 0) {
+  // Save images if provided (up to 3)
+  if (imageFiles.length > 0) {
     try {
       if (!existsSync(IMAGE_DIR)) {
         await mkdir(IMAGE_DIR, { recursive: true });
       }
 
-      const ext = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
-      const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "heic"].includes(ext) ? ext : "jpg";
-      const filePath = `${IMAGE_DIR}/${entry.id}.${safeExt}`;
+      const savedPaths: string[] = [];
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "heic"].includes(ext) ? ext : "jpg";
+        const suffix = i === 0 ? "" : `_${i + 1}`;
+        const fileName = `${entry.id}${suffix}.${safeExt}`;
+        const filePath = `${IMAGE_DIR}/${fileName}`;
 
-      const buffer = Buffer.from(await imageFile.arrayBuffer());
-      await writeFile(filePath, buffer);
+        const buffer = Buffer.from(await file.arrayBuffer());
+        await writeFile(filePath, buffer);
+        savedPaths.push(fileName);
+      }
 
-      // Update entry with image path
+      // Update entry with comma-separated image paths
       await prisma.entry.update({
         where: { id: entry.id },
-        data: { imagePath: `${entry.id}.${safeExt}` },
+        data: { imagePath: savedPaths.join(",") },
       });
 
       const updated = await prisma.entry.findUnique({ where: { id: entry.id } });
       return NextResponse.json(updated, { status: 201 });
     } catch (err) {
       console.error("[upload] Failed to save image:", err instanceof Error ? err.message : err);
-      // Entry saved without image — don't fail the whole request
+      // Entry saved without images — don't fail the whole request
     }
   }
 

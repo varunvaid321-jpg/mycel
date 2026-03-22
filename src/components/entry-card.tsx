@@ -58,14 +58,15 @@ function HighlightedText({ text, term }: { text: string; term?: string }) {
 
 export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProps) {
   const [confirming, setConfirming] = useState(false);
-  const [lightbox, setLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const cat = CATEGORIES[entry.category as Category];
   const topics = entry.tags
     ? entry.tags.split(",").filter(Boolean) as Topic[]
     : [];
 
-  const imageId = entry.imagePath?.split(".")[0];
-  const imageSrc = imageId ? `/api/images/${imageId}` : null;
+  const imageSrcs = entry.imagePath
+    ? entry.imagePath.split(",").filter(Boolean).map((p) => `/api/images/${p.split(".")[0]}`)
+    : [];
 
   return (
     <>
@@ -121,21 +122,26 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
           )}
         </div>
 
-        {/* Image thumbnail */}
-        {imageSrc && (
-          <button
-            onClick={() => setLightbox(true)}
-            className="mb-3 block rounded-lg overflow-hidden border border-border hover:border-accent/40 transition-colors cursor-pointer"
-          >
-            <img
-              src={imageSrc}
-              alt="Entry photo"
-              className="max-h-48 w-auto object-cover rounded-lg"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </button>
+        {/* Image thumbnails */}
+        {imageSrcs.length > 0 && (
+          <div className={`mb-3 flex gap-2 ${imageSrcs.length > 1 ? "flex-wrap" : ""}`}>
+            {imageSrcs.map((src, i) => (
+              <button
+                key={i}
+                onClick={() => setLightboxIndex(i)}
+                className="block rounded-lg overflow-hidden border border-border hover:border-accent/40 transition-colors cursor-pointer"
+              >
+                <img
+                  src={src}
+                  alt={`Entry photo ${i + 1}`}
+                  className="max-h-48 w-auto object-cover rounded-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Content — hide if it's just the camera emoji placeholder */}
@@ -147,11 +153,13 @@ export default function EntryCard({ entry, onDelete, searchTerm }: EntryCardProp
       </div>
 
       {/* Full-screen lightbox */}
-      {lightbox && imageSrc && (
+      {lightboxIndex !== null && imageSrcs[lightboxIndex] && (
         <Lightbox
-          src={imageSrc}
+          srcs={imageSrcs}
+          index={lightboxIndex}
           alt={`Photo from ${entry.localDate}`}
-          onClose={() => setLightbox(false)}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
         />
       )}
     </>
