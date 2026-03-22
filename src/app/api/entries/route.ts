@@ -5,8 +5,6 @@ import { autoCorrect } from "@/lib/ai";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
-export const dynamic = "force-dynamic";
-
 const IMAGE_DIR = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
 
 export async function GET(request: Request) {
@@ -14,8 +12,8 @@ export async function GET(request: Request) {
   const category = searchParams.get("category");
   const topic = searchParams.get("topic");
   const search = searchParams.get("search");
-  const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1), 200);
-  const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0);
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offset = parseInt(searchParams.get("offset") || "0");
 
   const where: Record<string, unknown> = { archived: false };
 

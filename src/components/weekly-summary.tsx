@@ -193,7 +193,7 @@ export default function WeeklySummary() {
               {data.healthLog && <WorkoutLog healthLog={data.healthLog} />}
 
               <p className={TEXT_NOTE}>
-                rule-based summary &middot; add CF_AI_API_KEY for ai brief
+                rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
               </p>
             </>
           )}
@@ -213,7 +213,7 @@ function WorkoutLog({ healthLog }: { healthLog: HealthLog }) {
       <ul className="space-y-1.5">
         {healthLog.days.map((day, i) => (
           <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
-            <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
+            <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
               {day.date}
             </span>
             <span className="text-text-muted">{day.summary}</span>

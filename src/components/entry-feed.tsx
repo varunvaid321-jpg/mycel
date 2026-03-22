@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import EntryCard from "./entry-card";
 import { TEXT_EMPTY, TEXT_META } from "@/lib/design-tokens";
 
@@ -27,37 +27,22 @@ export default function EntryFeed({ category, topic, search, refreshKey }: Entry
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const abortRef = useRef<AbortController | null>(null);
-
   const fetchEntries = useCallback(async () => {
-    // Cancel any in-flight request
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     setLoading(true);
     const params = new URLSearchParams();
     if (category !== "all") params.set("category", category);
     if (topic !== "all") params.set("topic", topic);
     if (search) params.set("search", search);
 
-    try {
-      const res = await fetch(`/api/entries?${params}`, { signal: controller.signal });
-      const data = await res.json();
-      setEntries(data.entries);
-      setTotal(data.total);
-    } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        console.error("[entry-feed] fetch failed:", err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
+    const res = await fetch(`/api/entries?${params}`);
+    const data = await res.json();
+    setEntries(data.entries);
+    setTotal(data.total);
+    setLoading(false);
   }, [category, topic, search]);
 
   useEffect(() => {
     fetchEntries();
-    return () => abortRef.current?.abort();
   }, [fetchEntries, refreshKey]);
 
   async function handleDelete(id: string) {
