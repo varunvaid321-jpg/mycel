@@ -27,8 +27,7 @@ interface HealthDayLog {
 
 interface HealthLog {
   days: HealthDayLog[];
-  insight: string;
-  motivation: string;
+  summary: string;
 }
 
 interface WeeklyData {
@@ -142,34 +141,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Health Log */}
-              {data.healthLog && data.healthLog.days.length > 0 && (
-                <div className="pt-3 border-t border-border">
-                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Workout Log
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {data.healthLog.days.map((day, i) => (
-                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
-                          {day.date}
-                        </span>
-                        <span className="text-text-muted">{day.summary}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {data.healthLog.insight && (
-                    <p className="mt-3 text-sm text-text-muted">
-                      {data.healthLog.insight}
-                    </p>
-                  )}
-                  {data.healthLog.motivation && (
-                    <p className="mt-2 text-sm text-spore/90 italic">
-                      {data.healthLog.motivation}
-                    </p>
-                  )}
-                </div>
-              )}
+              {data.healthLog && <WorkoutLog healthLog={data.healthLog} />}
 
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
@@ -218,34 +190,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Health Log (also shown in fallback mode) */}
-              {data.healthLog && data.healthLog.days.length > 0 && (
-                <div className="pt-3 border-t border-border">
-                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Workout Log
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {data.healthLog.days.map((day, i) => (
-                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
-                          {day.date}
-                        </span>
-                        <span className="text-text-muted">{day.summary}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {data.healthLog.insight && (
-                    <p className="mt-3 text-sm text-text-muted">
-                      {data.healthLog.insight}
-                    </p>
-                  )}
-                  {data.healthLog.motivation && (
-                    <p className="mt-2 text-sm text-spore/90 italic">
-                      {data.healthLog.motivation}
-                    </p>
-                  )}
-                </div>
-              )}
+              {data.healthLog && <WorkoutLog healthLog={data.healthLog} />}
 
               <p className={TEXT_NOTE}>
                 rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
@@ -253,6 +198,32 @@ export default function WeeklySummary() {
             </>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function WorkoutLog({ healthLog }: { healthLog: HealthLog }) {
+  if (!healthLog || healthLog.days.length === 0) return null;
+  return (
+    <div className="pt-3 border-t border-border">
+      <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
+        Workout Log
+      </h3>
+      <ul className="space-y-1.5">
+        {healthLog.days.map((day, i) => (
+          <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+            <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+              {day.date}
+            </span>
+            <span className="text-text-muted">{day.summary}</span>
+          </li>
+        ))}
+      </ul>
+      {healthLog.summary && (
+        <p className="mt-3 text-sm text-spore/90 italic">
+          {healthLog.summary}
+        </p>
       )}
     </div>
   );
