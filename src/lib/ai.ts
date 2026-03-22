@@ -102,6 +102,16 @@ export interface AIWeeklyBrief {
   prioritizedActions: string[];
 }
 
+export interface HealthDayLog {
+  date: string;
+  summary: string;
+}
+
+export interface AIHealthLog {
+  days: HealthDayLog[];
+  momentum: string;
+}
+
 export interface AIMonthlyReview {
   topFocusAreas: { topic: string; count: number }[];
   keyDecisions: string[];
@@ -365,4 +375,37 @@ Return JSON:
 
   if (!result) return null;
   return parseJSON<AIMonthlyReview>(result, "monthly");
+}
+
+// ── Health Log ──────────────────────────────────────────────
+
+export async function generateHealthLog(
+  entries: Entry[]
+): Promise<AIHealthLog | null> {
+  if (entries.length === 0) return null;
+
+  const formatted = formatEntries(entries);
+
+  const result = await ask(
+    `Read ALL of these journal entries carefully. Extract EVERY mention of exercise, workout, running, walking, gym, swimming, yoga, cycling, stretching, sports, steps, physical activity, diet, fasting, weight, sleep, hydration, or any health-related action the person DID.
+
+IMPORTANT RULES:
+- Include EVERY day where they did something health-related, no matter how small (a walk, choosing a healthy meal, skipping alcohol, sleeping well)
+- If a day has no health mention, skip that day entirely — do NOT include it
+- Be motivational and celebratory. Highlight what they DID, not what they missed
+- Never coach, suggest, or tell them what to do. Just reflect their wins back to them
+- Use "you" — speak directly to them
+- Keep each day summary to 1 short sentence
+- The "momentum" field should be a single warm, encouraging sentence about their overall health pattern this week — celebrate consistency or effort, never criticize gaps
+
+Entries:
+${formatted}
+
+Return JSON:
+{"days": [{"date": "Mon Mar 17", "summary": "short sentence about what you did"}], "momentum": "one encouraging sentence about your health week"}`,
+    "health-log"
+  );
+
+  if (!result) return null;
+  return parseJSON<AIHealthLog>(result, "health-log");
 }

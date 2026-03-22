@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { generateWeeklyBrief, type AIWeeklyBrief } from "@/lib/ai";
+import { generateWeeklyBrief, generateHealthLog, type AIWeeklyBrief, type AIHealthLog } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,10 @@ let cachedBrief: AIWeeklyBrief | null = null;
 let cachedEntryCount = -1;
 let cachedAt = 0;
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
+
+let cachedHealthLog: AIHealthLog | null = null;
+let cachedHealthCount = -1;
+let cachedHealthAt = 0;
 
 export async function GET() {
   const weekAgo = new Date();
@@ -49,6 +53,24 @@ export async function GET() {
       cachedBrief = aiBrief;
       cachedEntryCount = entries.length;
       cachedAt = now;
+    }
+  }
+
+  // Health log: separate cache, same invalidation logic
+  const healthCacheValid =
+    cachedHealthLog &&
+    cachedHealthCount === entries.length &&
+    now - cachedHealthAt < CACHE_MAX_AGE_MS;
+
+  let healthLog: AIHealthLog | null;
+  if (healthCacheValid) {
+    healthLog = cachedHealthLog;
+  } else {
+    healthLog = await generateHealthLog(entries);
+    if (healthLog) {
+      cachedHealthLog = healthLog;
+      cachedHealthCount = entries.length;
+      cachedHealthAt = now;
     }
   }
 
@@ -116,5 +138,6 @@ export async function GET() {
         }
       : null,
     aiBrief,
+    healthLog,
   });
 }
