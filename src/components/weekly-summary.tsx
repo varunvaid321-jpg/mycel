@@ -33,15 +33,17 @@ interface WeeklyData {
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
   aiBrief: AIBrief | null;
-  healthLog: HealthMonitorOutput | null;
+  // healthLog now fetched separately via /api/health
 }
 
 export default function WeeklySummary() {
   const [data, setData] = useState<WeeklyData | null>(null);
+  const [healthData, setHealthData] = useState<HealthMonitorOutput | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch weekly summary (fast — no health, no Groq)
     fetch("/api/weekly")
       .then((r) => r.json())
       .then((d) => {
@@ -49,6 +51,14 @@ export default function WeeklySummary() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    // Fetch health separately (async, non-blocking — uses Groq)
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.healthLog) setHealthData(d.healthLog);
+      })
+      .catch(() => {}); // silent fail — health section stays hidden
   }, []);
 
   if (loading || !data || data.totalEntries === 0) return null;
@@ -136,7 +146,7 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log */}
-              {data.healthLog && <HealthMonitor healthLog={data.healthLog} />}
+              {healthData && <HealthMonitor healthLog={healthData} />}
 
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
@@ -186,7 +196,7 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log (also shown in fallback mode) */}
-              {data.healthLog && <HealthMonitor healthLog={data.healthLog} />}
+              {healthData && <HealthMonitor healthLog={healthData} />}
 
               <p className={TEXT_NOTE}>
                 weekly summary
