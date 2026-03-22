@@ -155,13 +155,13 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log */}
-              {data.healthLog && data.healthLog.days && data.healthLog.days.length > 0 && (
+              {data.healthLog && data.healthLog.days && data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
                     Health Monitor
                   </h3>
                   <ul className="space-y-2">
-                    {data.healthLog.days.map((day, i) => (
+                    {data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).map((day, i) => (
                       <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
                         <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
@@ -236,13 +236,13 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log (also shown in fallback mode) */}
-              {data.healthLog && data.healthLog.days && data.healthLog.days.length > 0 && (
+              {data.healthLog && data.healthLog.days && data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
                     Health Monitor
                   </h3>
                   <ul className="space-y-2">
-                    {data.healthLog.days.map((day, i) => (
+                    {data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).map((day, i) => (
                       <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
                         <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
@@ -270,7 +270,7 @@ export default function WeeklySummary() {
               )}
 
               <p className={TEXT_NOTE}>
-                rule-based summary
+                weekly summary
               </p>
             </>
           )}
