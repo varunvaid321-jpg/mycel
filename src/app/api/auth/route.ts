@@ -102,7 +102,7 @@ function verifySessionToken(token: string): boolean {
     const hmac = decoded.slice(lastDot + 1);
 
     const secret = process.env.MYCEL_PASSPHRASE;
-  if (!secret) throw new Error("MYCEL_PASSPHRASE env var is required");
+    if (!secret) throw new Error("MYCEL_PASSPHRASE env var is required");
     const expected = crypto.createHmac("sha256", secret).update(data).digest("hex");
 
     if (hmac !== expected) return false;

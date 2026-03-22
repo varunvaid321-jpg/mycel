@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-function verifyToken(token: string, secret: string): boolean {
+function verifyToken(token: string): boolean {
   try {
     const decoded = atob(token);
     const lastDot = decoded.lastIndexOf(".");
@@ -45,7 +45,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Verify signed token structure + expiry
-  if (!verifyToken(session.value, process.env.MYCEL_PASSPHRASE || "")) {
+  if (!verifyToken(session.value)) {
     // Token expired or invalid — redirect to login
     const res = NextResponse.redirect(new URL("/login", request.url));
     res.cookies.set("mycel_session", "", { path: "/", maxAge: 0 });
