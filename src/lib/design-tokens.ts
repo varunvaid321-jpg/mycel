@@ -84,3 +84,11 @@ export const BTN_IMPORT = "w-full py-3 min-h-[44px] bg-accent text-bg rounded-lg
 export const MIC_LISTENING = "bg-signal/20 text-signal border border-signal/40 animate-pulse";
 export const MIC_IDLE = "bg-surface-hover text-text-muted border border-border hover:text-text-primary";
 export const MIC_BASE = "w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all";
+
+// ── Date/Time Formatting ──
+export const TIMEZONE = "America/Toronto";
+export const DATE_FORMAT: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric", timeZone: "America/Toronto" };
+export const TIME_FORMAT: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Toronto" };
+export const DATE_SHORT: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric", timeZone: "America/Toronto" };
+export const DATE_WEEKDAY: Intl.DateTimeFormatOptions = { weekday: "long", timeZone: "America/Toronto" };
+export const DATE_MONTH_DAY: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", timeZone: "America/Toronto" };

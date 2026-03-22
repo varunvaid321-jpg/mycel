@@ -1,6 +1,8 @@
 // Cloudflare Workers AI — free 10k requests/day
 // Uses @cf/meta/llama-3.1-8b-instruct (fast, free)
 
+import { TIMEZONE } from "@/lib/design-tokens";
+
 // Personal context injected into every AI call so it understands who the user is
 const SYSTEM_CONTEXT = `You are a helpful personal assistant for a private journal. Always respond with valid JSON when asked for JSON. No markdown formatting.
 
@@ -223,12 +225,18 @@ function parseJSON<T>(text: string, caller: string): T | null {
   }
 }
 
+function dayOfWeek(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { weekday: "short", timeZone: TIMEZONE });
+}
+
 function formatEntries(entries: Entry[]): string {
   return entries
-    .map(
-      (e) =>
-        `[${e.localDate} ${e.localTime}] (${e.category}) ${e.content}`
-    )
+    .map((e) => {
+      const dow = dayOfWeek(e.localDate);
+      return `[${dow ? dow + " " : ""}${e.localDate} ${e.localTime}] (${e.category}) ${e.content}`;
+    })
     .join("\n\n");
 }
 
@@ -385,29 +393,35 @@ export async function generateHealthLog(
 ): Promise<AIHealthLog | null> {
   if (entries.length === 0) return null;
 
-  // Only look at last 5 days of entries
+  // Only last 5 days, exclude imported entries
   const fiveDaysAgo = new Date();
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-  const recent = entries.filter((e) => new Date(e.createdAt) >= fiveDaysAgo);
+  const recent = entries.filter(
+    (e) => new Date(e.createdAt) >= fiveDaysAgo && !e.tags?.includes("imported")
+  );
   if (recent.length === 0) return null;
 
   const formatted = formatEntries(recent);
 
   const result = await ask(
-    `Read ALL of these journal entries from the last 5 days. Extract EVERY mention of exercise, workout, running, walking, gym, swimming, yoga, cycling, stretching, sports, steps, physical activity, diet, fasting, weight, sleep, hydration, or any health-related action the person DID.
+    `Read these journal entries. Find ONLY mentions of gym, workout, exercise, running, walking, swimming, cycling, weights, stretching, or sports. Nothing else — no sleep, no diet, no hydration, no fasting, no mental health.
 
 RULES:
-- Only include days where they actually did something health-related. If a day has no health mention, do NOT include that day at all.
-- Keep each day summary to 1 short sentence about what they did physically
-- Use "you" — speak directly to them
-- The "insight" field: one practical observation based on their pattern. Examples: "You tend to work out in the mornings — that's your high-energy window", "Heavy on cardio this week, might be a good time to mix in some weights", "You're consistent with walks after dinner — that's becoming a habit". Make it specific to THEIR data, not generic advice.
-- The "motivation" field: exactly ONE warm sentence celebrating their effort. Not preachy. Not coaching. Just recognition.
+- Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
+- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
+- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
+- If NO entries mention any exercise at all, return {"days": [], "insight": "", "motivation": ""}
+- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual, past tense.
+- The "motivation" field: one short line. Keep it real, not cheesy. Motivate to keep going or do more.
+- Use "you" — speak directly
 
 Entries:
 ${formatted}
 
+IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
+
 Return JSON:
-{"days": [{"date": "Mon Mar 17", "summary": "what you did"}], "insight": "one pattern observation", "motivation": "one encouraging line"}`,
+{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "insight": "one observation", "motivation": "one line"}`,
     "health-log"
   );
 

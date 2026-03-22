@@ -1,3 +1,5 @@
+IMPORTANT: Read and follow ~/.claude/memory/lessons.md before any work.
+
 # Mycel — Development Rules
 
 ## What is Mycel
@@ -83,6 +85,7 @@ node server.js
 - Weekly/monthly briefs, guide, video/web analysis all use AI
 - All prompts address journal owner as "you/your" — never "the user" or "they"
 - Prompts must ask for JSON and use parseJSON() to parse (logs failures with raw response)
+- **NEVER let AI calculate dates, day names, or do calendar math** — LLMs are unreliable at this. Always compute dates/day-of-week programmatically and include them in the prompt. `formatEntries()` already includes day names via `dayOfWeek()`. Any new prompt that needs dates must use pre-computed values, not ask the AI to derive them.
 
 ### Emotional detector
 - Pure client-side, no API call — `src/lib/emotional-detect.ts`
@@ -156,6 +159,7 @@ NEVER change env vars without explicit authorization.
 - Three input tokens: `INPUT_TEXT` (compact inline), `INPUT_PASSWORD` (paired with button), `INPUT_STANDALONE` (full-page forms)
 - Every component imports from design-tokens — no raw Tailwind duplication
 - New tokens must be consumed by at least one component — no dead tokens
+- Date/time formatting tokens: `TIMEZONE`, `DATE_FORMAT`, `TIME_FORMAT`, `DATE_SHORT`, `DATE_WEEKDAY`, `DATE_MONTH_DAY` — use these instead of hardcoding timezone or format options. All times are EST/EDT (America/Toronto).
 
 ### Key files
 - `server.js` — production entry point (prisma push + Next.js)

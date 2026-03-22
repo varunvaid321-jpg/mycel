@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { classify } from "@/lib/classifier";
+import { DATE_FORMAT, TIME_FORMAT } from "@/lib/design-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -12,18 +13,8 @@ export async function POST(request: Request) {
   }
 
   const now = new Date();
-  const localDate = now.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "America/Toronto",
-  });
-  const localTime = now.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "America/Toronto",
-  });
+  const localDate = now.toLocaleDateString("en-US", DATE_FORMAT);
+  const localTime = now.toLocaleTimeString("en-US", TIME_FORMAT);
 
   const imported = [];
   const skipped = [];
