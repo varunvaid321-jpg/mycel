@@ -35,26 +35,23 @@ export async function GET() {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
 
-  // Filter out imported entries for AI analysis
-  const organicEntries = entries.filter((e) => !e.tags?.includes("imported"));
-
   // AI brief: use cache if entry count unchanged and not too stale
   const now = Date.now();
   const cacheValid =
     cachedBrief &&
-    cachedEntryCount === organicEntries.length &&
+    cachedEntryCount === entries.length &&
     now - cachedAt < CACHE_MAX_AGE_MS;
 
   let aiBrief: AIWeeklyBrief | null;
   if (cacheValid) {
     aiBrief = cachedBrief;
-    console.log(`[weekly] cache HIT — ${organicEntries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
+    console.log(`[weekly] cache HIT — ${entries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
   } else {
-    console.log(`[weekly] cache MISS — entries: ${organicEntries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
-    aiBrief = await generateWeeklyBrief(organicEntries);
+    console.log(`[weekly] cache MISS — entries: ${entries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
+    aiBrief = await generateWeeklyBrief(entries);
     if (aiBrief) {
       cachedBrief = aiBrief;
-      cachedEntryCount = organicEntries.length;
+      cachedEntryCount = entries.length;
       cachedAt = now;
     }
   }
@@ -62,39 +59,36 @@ export async function GET() {
   // Health log: separate cache, same invalidation logic
   const healthCacheValid =
     cachedHealthLog &&
-    cachedHealthCount === organicEntries.length &&
+    cachedHealthCount === entries.length &&
     now - cachedHealthAt < CACHE_MAX_AGE_MS;
 
   let healthLog: AIHealthLog | null;
   if (healthCacheValid) {
     healthLog = cachedHealthLog;
   } else {
-    healthLog = await generateHealthLog(organicEntries);
+    healthLog = await generateHealthLog(entries);
     if (healthLog) {
       cachedHealthLog = healthLog;
-      cachedHealthCount = organicEntries.length;
+      cachedHealthCount = entries.length;
       cachedHealthAt = now;
     }
   }
 
   // Fallback rule-based data (always computed — cheap)
-  // Deduplicate by content to avoid showing the same entry multiple times
-  const uniqueContent = (items: string[], max: number) => [...new Set(items)].slice(0, max);
+  const reminders = entries
+    .filter((e) => e.category === "signal")
+    .slice(0, 5)
+    .map((e) => e.content);
 
-  const reminders = uniqueContent(
-    entries.filter((e) => e.category === "signal").map((e) => e.content),
-    5
-  );
+  const actions = entries
+    .filter((e) => e.category === "fruit")
+    .slice(0, 5)
+    .map((e) => e.content);
 
-  const actions = uniqueContent(
-    entries.filter((e) => e.category === "fruit").map((e) => e.content),
-    5
-  );
-
-  const letting_go = uniqueContent(
-    entries.filter((e) => e.category === "decompose").map((e) => e.content),
-    3
-  );
+  const letting_go = entries
+    .filter((e) => e.category === "decompose")
+    .slice(0, 3)
+    .map((e) => e.content);
 
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",

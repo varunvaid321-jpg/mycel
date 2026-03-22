@@ -111,7 +111,8 @@ export interface HealthDayLog {
 
 export interface AIHealthLog {
   days: HealthDayLog[];
-  summary: string;
+  insight: string;
+  motivation: string;
 }
 
 export interface AIMonthlyReview {
@@ -409,8 +410,9 @@ RULES:
 - Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
 - Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
 - This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
-- If NO entries mention any exercise at all, return {"days": [], "summary": ""}
-- The "summary" field: exactly ONE sentence for the whole week. Combine a factual pattern observation with motivation. Example: "3 gym sessions this week — you're building momentum, keep it up." or "Only walked twice — get back in there." Keep it real, blunt, past tense.
+- If NO entries mention any exercise at all, return {"days": [], "insight": "", "motivation": ""}
+- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual, past tense.
+- The "motivation" field: one short line. Keep it real, not cheesy. Motivate to keep going or do more.
 - Use "you" — speak directly
 
 Entries:
@@ -419,7 +421,7 @@ ${formatted}
 IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
 
 Return JSON:
-{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "summary": "one sentence for the week"}`,
+{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "insight": "one observation", "motivation": "one line"}`,
     "health-log"
   );
 
