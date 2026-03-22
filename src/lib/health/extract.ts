@@ -1,74 +1,106 @@
-// Health Monitor — Health Signal Extraction
-// Sends entry batches to LLM, returns structured health signals
+// Health Monitor — Structured extraction with runtime validation
 
 import type { LLMProvider } from "./provider";
 import type { HealthSignal, JournalEntry } from "./types";
+import { isValidHealthSignal, MAX_LABEL_LENGTH } from "./types";
 
-const EXTRACTION_SYSTEM_PROMPT = `You analyze journal entries for physical activity. Return a JSON array.
+const EXTRACTION_PROMPT = `You analyze journal entries for COMPLETED physical activity only. Return a JSON array.
 
-For EACH entry, determine if the person ACTUALLY DID physical activity (not planned, not someone else's).
+COMPLETED means past tense: "did", "completed", "went", "played", "walked", "ran", "swam".
+NOT completed — EXCLUDE these: "want to", "need to", "should", "planning to", "learn", "going to", "hope to", "thinking about", "might", "tomorrow", "try to", "explore", "research".
 
-STRICT RULES:
-- COMPLETED means they DID it in the past. Words like "did", "completed", "went", "played", "walked" = completed.
-- NOT completed: "want to", "need to", "should", "planning to", "learn", "going to", "hope to" = intention. Mark needs_exclusion=true, exclusion_reason="intention_only".
-- "learn scuba diving" = intention, NOT completed activity. Exclude it.
-- Only count the PERSON'S OWN activity. "Kyna at dance", "kids swimming" = NOT the person's activity UNLESS they say "we" or "I" did it too.
-- activity_text_exact: quote their COMPLETE phrase. Do NOT truncate. "played table tennis" not "played table". "completed 10 push-ups" not "completed 10". Include enough words to make sense (up to 15 words).
-- Use ONLY words from the entry. Never add exercise details not explicitly written.
-- If uncertain, set needs_exclusion=true, exclusion_reason="ambiguous".
-- "Good gym day" = completed, type "unknown" (do NOT infer what they did at the gym).
+RULES:
+1. Only the person's OWN activity. "Kyna at dance", "kids swimming", "asked her to walk" = exclude.
+2. activity_text_exact MUST be a phrase that appears in their entry almost word-for-word. Never rephrase. "played table tennis" not "played table". "completed 10 push-ups" not "completed 10".
+3. NEVER add details not in the text. "gym" → type "unknown", NOT "strength".
+4. If both intention AND completion in one entry, extract ONLY the completed part.
+5. entry_id must be EXACTLY the ID provided. Never invent IDs.
+6. Return EXACTLY one object per entry.
+7. If uncertain → needs_exclusion=true, exclusion_reason="ambiguous".
 
-Return JSON array (one object per entry):
+Return JSON array:
 [{
-  "entry_id": "the id provided",
+  "entry_id": "exact ID from input",
   "completed_activity": true/false,
-  "activity_text_exact": "complete quote from their words, up to 15 words",
+  "activity_text_exact": "exact phrase from their entry",
   "activity_type": "strength|cardio|sport|walking|mobility|recovery|mixed|unknown",
   "confidence": "high|medium|low",
   "needs_exclusion": true/false,
   "exclusion_reason": "intention_only|third_person_only|ambiguous|no_health_signal"
-}]
+}]`;
 
-If an entry has NO health signal at all, set completed_activity=false, needs_exclusion=true, exclusion_reason="no_health_signal".
-If an entry has BOTH intention AND completion, keep ONLY the completed part. Mark the intention part as excluded.`;
-
-// Extract health signals from a batch of entries
 export async function extractHealthSignals(
   entries: JournalEntry[],
   provider: LLMProvider
-): Promise<HealthSignal[]> {
-  if (entries.length === 0) return [];
+): Promise<{ signals: HealthSignal[]; rawCount: number }> {
+  if (entries.length === 0) return { signals: [], rawCount: 0 };
 
-  // Format entries for the prompt
+  // Collect valid entry IDs for validation
+  const validIds = new Set(entries.map((e) => e.id));
+
   const formatted = entries
     .map((e) => `[ID: ${e.id}] [${e.localDate}] ${e.content}`)
     .join("\n\n");
 
   const result = await provider.ask(
-    EXTRACTION_SYSTEM_PROMPT,
+    EXTRACTION_PROMPT,
     `Analyze these journal entries:\n\n${formatted}`,
     1500
   );
 
   if (!result) {
     console.error("[health:extract] LLM returned null");
-    return [];
+    return { signals: [], rawCount: 0 };
   }
 
-  // Parse JSON from response
+  // Parse JSON array from response
   const cleaned = result.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
   const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {
-    console.error("[health:extract] No JSON array in response");
-    return [];
+    console.error("[health:extract] No JSON array found in response");
+    return { signals: [], rawCount: 0 };
   }
 
+  let rawItems: unknown[];
   try {
-    const signals = JSON.parse(jsonMatch[0]) as HealthSignal[];
-    if (!Array.isArray(signals)) return [];
-    return signals;
+    rawItems = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(rawItems)) {
+      console.error("[health:extract] Parsed result is not an array");
+      return { signals: [], rawCount: 0 };
+    }
   } catch {
     console.error("[health:extract] JSON parse failed");
-    return [];
+    return { signals: [], rawCount: 0 };
   }
+
+  // Runtime validate each signal
+  const signals: HealthSignal[] = [];
+  let rejected = 0;
+
+  for (const item of rawItems) {
+    if (!isValidHealthSignal(item)) {
+      rejected++;
+      continue;
+    }
+
+    // Reject invented entry_ids
+    if (!validIds.has(item.entry_id)) {
+      console.warn(`[health:extract] REJECTED invented entry_id: ${item.entry_id}`);
+      rejected++;
+      continue;
+    }
+
+    // Truncate label (validation happens later, this is safety)
+    if (item.activity_text_exact.length > MAX_LABEL_LENGTH * 2) {
+      item.activity_text_exact = item.activity_text_exact.slice(0, MAX_LABEL_LENGTH);
+    }
+
+    signals.push(item);
+  }
+
+  if (rejected > 0) {
+    console.warn(`[health:extract] ${rejected} signals failed schema validation`);
+  }
+
+  return { signals, rawCount: rawItems.length };
 }

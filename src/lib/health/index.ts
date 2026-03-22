@@ -1,83 +1,118 @@
-// Health Monitor — Public API
-// Single entry point for the health extraction pipeline
+// Health Monitor — Public API with caching and coverage threshold
 
 import { getProvider } from "./provider";
 import { extractHealthSignals } from "./extract";
 import { aggregateByDay } from "./aggregate";
 import { generateWeeklySummary } from "./summarize";
+import { isImportedEntry, PIPELINE_VERSION, COVERAGE_THRESHOLD } from "./types";
 import type { JournalEntry, HealthMonitorOutput } from "./types";
 
 export type { HealthMonitorOutput, HealthDay, WeekSummary, HealthActivity } from "./types";
 
-/**
- * Generate the weekly health monitor from journal entries.
- *
- * @param weekEntries - Entries from the last 7 days
- * @param monthEntries - Entries from the last 30 days (for pattern context)
- * @returns Structured health monitor output, or null if no provider or no activities
- */
+// ── Cache ──
+let cachedHealth: HealthMonitorOutput | null = null;
+let cachedKey = "";
+let cachedAt = 0;
+let cachedIsNull = false;
+const CACHE_TTL = 5 * 60 * 1000;       // 5 min for valid results
+const NULL_CACHE_TTL = 2 * 60 * 1000;   // 2 min for failures
+
+function buildCacheKey(entries: JournalEntry[]): string {
+  const count = entries.length;
+  const latestUpdate = entries.length > 0
+    ? Math.max(...entries.map((e) => (e.updatedAt || e.createdAt).getTime()))
+    : 0;
+  return `${count}:${latestUpdate}:${PIPELINE_VERSION}`;
+}
+
 export async function generateWeeklyHealthMonitor(
   weekEntries: JournalEntry[],
   monthEntries: JournalEntry[]
 ): Promise<HealthMonitorOutput | null> {
-  const provider = getProvider();
-  if (!provider) {
-    console.warn("[health] No LLM provider available (missing GROQ_API_KEY and CF keys)");
-    return null;
+  // Filter imported/chatgpt entries using exact tag match
+  const filteredWeek = weekEntries.filter((e) => !isImportedEntry(e));
+  const filteredMonth = monthEntries.filter((e) => !isImportedEntry(e));
+
+  // Check cache
+  const key = buildCacheKey(filteredWeek);
+  const now = Date.now();
+  const ttl = cachedIsNull ? NULL_CACHE_TTL : CACHE_TTL;
+  if (key === cachedKey && now - cachedAt < ttl) {
+    console.log(`[health] cache HIT (${cachedIsNull ? "null" : "valid"})`);
+    return cachedHealth;
   }
 
-  // Filter out imported entries
-  const filteredWeek = weekEntries.filter(
-    (e) => !e.tags?.toLowerCase().includes("imported") && !e.tags?.toLowerCase().includes("chatgpt")
-  );
-  const filteredMonth = monthEntries.filter(
-    (e) => !e.tags?.toLowerCase().includes("imported") && !e.tags?.toLowerCase().includes("chatgpt")
-  );
+  const provider = getProvider();
+  if (!provider) {
+    console.warn("[health] No LLM provider (missing GROQ_API_KEY)");
+    cachedHealth = null; cachedKey = key; cachedAt = now; cachedIsNull = true;
+    return null;
+  }
 
   if (filteredWeek.length === 0) {
     console.log("[health] No entries this week");
+    cachedHealth = null; cachedKey = key; cachedAt = now; cachedIsNull = true;
     return null;
   }
 
-  console.log(`[health] Analyzing ${filteredWeek.length} week entries, ${filteredMonth.length} month entries`);
+  console.log(`[health] Analyzing ${filteredWeek.length} week entries, ${filteredMonth.length} month context`);
 
-  // Step 1: Extract health signals from this week's entries
-  // Batch in groups of 10 to keep prompt size manageable
-  const allSignals = [];
-  for (let i = 0; i < filteredWeek.length; i += 10) {
-    const batch = filteredWeek.slice(i, i + 10);
-    const signals = await extractHealthSignals(batch, provider);
-    allSignals.push(...signals);
-  }
+  try {
+    // Extract health signals (batched)
+    let totalSignals = 0;
+    let totalRaw = 0;
+    const allSignals = [];
 
-  // Step 2: Validate and aggregate by day
-  const { days, stats } = aggregateByDay(allSignals, filteredWeek);
+    for (let i = 0; i < filteredWeek.length; i += 10) {
+      const batch = filteredWeek.slice(i, i + 10);
+      const { signals, rawCount } = await extractHealthSignals(batch, provider);
+      allSignals.push(...signals);
+      totalSignals += signals.length;
+      totalRaw += rawCount;
+    }
 
-  console.log(
-    `[health] analyzed ${stats.analyzed}, extracted ${stats.extracted}, excluded ${stats.excluded}, validated ${stats.validated}`
-  );
+    // Validate + aggregate
+    const { days, stats } = aggregateByDay(allSignals, filteredWeek);
 
-  if (days.length === 0) {
-    console.log("[health] No active days found");
+    console.log(
+      `[health] extracted ${stats.extracted}, excluded ${stats.excluded}, validated ${stats.validated}`
+    );
+
+    if (days.length === 0) {
+      console.log("[health] No active days");
+      cachedHealth = null; cachedKey = key; cachedAt = now; cachedIsNull = true;
+      return null;
+    }
+
+    console.log(`[health] ${days.length} active days`);
+
+    // Coverage check: don't generate summary from incomplete data
+    const coverage = totalRaw > 0 ? totalSignals / totalRaw : 0;
+    let weekSummary = null;
+
+    if (coverage >= COVERAGE_THRESHOLD) {
+      // Count month-wide active days for context
+      let monthActiveDays = days.length;
+      const olderEntries = filteredMonth.filter(
+        (e) => !filteredWeek.some((w) => w.id === e.id)
+      );
+      if (olderEntries.length > 0) {
+        const { signals: olderSignals } = await extractHealthSignals(olderEntries.slice(0, 30), provider);
+        const { days: olderDays } = aggregateByDay(olderSignals, olderEntries);
+        monthActiveDays += olderDays.length;
+      }
+
+      weekSummary = await generateWeeklySummary(days, monthActiveDays, provider);
+    } else {
+      console.warn(`[health] Low coverage (${(coverage * 100).toFixed(0)}%) — skipping summary`);
+    }
+
+    const result: HealthMonitorOutput = { days, week_summary: weekSummary };
+    cachedHealth = result; cachedKey = key; cachedAt = now; cachedIsNull = false;
+    return result;
+  } catch (err) {
+    console.error("[health] Pipeline error:", err instanceof Error ? err.message : err);
+    cachedHealth = null; cachedKey = key; cachedAt = now; cachedIsNull = true;
     return null;
   }
-
-  console.log(`[health] ${days.length} active days: ${days.map((d) => d.date).join(", ")}`);
-
-  // Step 3: Count month-wide active days for context
-  // Quick extraction on month entries — just count days with activity, don't need full pipeline
-  let monthActiveDays = days.length; // start with this week's count
-  const olderEntries = filteredMonth.filter(
-    (e) => !filteredWeek.some((w) => w.id === e.id)
-  );
-  if (olderEntries.length > 0) {
-    const olderSignals = await extractHealthSignals(olderEntries.slice(0, 30), provider);
-    const { days: olderDays } = aggregateByDay(olderSignals, olderEntries);
-    monthActiveDays += olderDays.length;
-  }
-
-  // Step 4: Generate weekly summary
-  const weekSummary = await generateWeeklySummary(days, monthActiveDays, provider);
-
-  return { days, week_summary: weekSummary };
 }

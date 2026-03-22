@@ -20,28 +20,9 @@ interface AIBrief {
   prioritizedActions: string[];
 }
 
-interface HealthActivity {
-  label: string;
-  type: string;
-  confidence: string;
-}
-
-interface HealthDay {
-  date: string;
-  activities: HealthActivity[];
-}
-
-interface WeekSummary {
-  active_days: number;
-  pattern_note: string;
-  next_best_action: string;
-  motivation: string;
-}
-
-interface HealthLog {
-  days: HealthDay[];
-  week_summary: WeekSummary | null;
-}
+// Health types imported from health module — single source of truth
+import type { HealthMonitorOutput, HealthDay } from "@/lib/health/types";
+import { MAX_LABEL_LENGTH } from "@/lib/health/types";
 
 interface WeeklyData {
   totalEntries: number;
@@ -52,7 +33,7 @@ interface WeeklyData {
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
   aiBrief: AIBrief | null;
-  healthLog: HealthLog | null;
+  healthLog: HealthMonitorOutput | null;
 }
 
 export default function WeeklySummary() {
@@ -155,38 +136,7 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log */}
-              {data.healthLog && data.healthLog.days && data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).length > 0 && (
-                <div className="pt-3 border-t border-border">
-                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Health Monitor
-                  </h3>
-                  <ul className="space-y-2">
-                    {data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).map((day, i) => (
-                      <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
-                          {day.date}
-                        </span>
-                        <span className="text-text-muted">
-                          {day.activities.map((a) => a.label).join(" · ")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  {data.healthLog.week_summary && (
-                    <div className="mt-3 space-y-1">
-                      {data.healthLog.week_summary.pattern_note && (
-                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.pattern_note}</p>
-                      )}
-                      {data.healthLog.week_summary.next_best_action && (
-                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.next_best_action}</p>
-                      )}
-                      {data.healthLog.week_summary.motivation && (
-                        <p className="text-sm text-spore/90 italic">{data.healthLog.week_summary.motivation}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              {data.healthLog && <HealthMonitor healthLog={data.healthLog} />}
 
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
@@ -236,43 +186,50 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log (also shown in fallback mode) */}
-              {data.healthLog && data.healthLog.days && data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).length > 0 && (
-                <div className="pt-3 border-t border-border">
-                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Health Monitor
-                  </h3>
-                  <ul className="space-y-2">
-                    {data.healthLog.days.filter((d) => d.activities && d.activities.length > 0).map((day, i) => (
-                      <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
-                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
-                          {day.date}
-                        </span>
-                        <span className="text-text-muted">
-                          {day.activities.map((a) => a.label).join(" · ")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  {data.healthLog.week_summary && (
-                    <div className="mt-3 space-y-1">
-                      {data.healthLog.week_summary.pattern_note && (
-                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.pattern_note}</p>
-                      )}
-                      {data.healthLog.week_summary.next_best_action && (
-                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.next_best_action}</p>
-                      )}
-                      {data.healthLog.week_summary.motivation && (
-                        <p className="text-sm text-spore/90 italic">{data.healthLog.week_summary.motivation}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              {data.healthLog && <HealthMonitor healthLog={data.healthLog} />}
 
               <p className={TEXT_NOTE}>
                 weekly summary
               </p>
             </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HealthMonitor({ healthLog }: { healthLog: HealthMonitorOutput }) {
+  const activeDays = healthLog.days?.filter((d) => d.activities?.length > 0) || [];
+  if (activeDays.length === 0) return null;
+
+  function truncLabel(label: string): string {
+    return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + "..." : label;
+  }
+
+  return (
+    <div className="pt-3 border-t border-border">
+      <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>Health Monitor</h3>
+      <ul className="space-y-2">
+        {activeDays.map((day, i) => (
+          <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
+            <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">{day.date}</span>
+            <span className="text-text-muted">
+              {day.activities.map((a) => truncLabel(a.label)).join(" · ")}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {healthLog.week_summary && (
+        <div className="mt-3 space-y-1">
+          {healthLog.week_summary.pattern_note && (
+            <p className="text-sm text-text-muted">{healthLog.week_summary.pattern_note}</p>
+          )}
+          {healthLog.week_summary.next_best_action && (
+            <p className="text-sm text-text-muted">{healthLog.week_summary.next_best_action}</p>
+          )}
+          {healthLog.week_summary.motivation && (
+            <p className="text-sm text-spore/90 italic">{healthLog.week_summary.motivation}</p>
           )}
         </div>
       )}
