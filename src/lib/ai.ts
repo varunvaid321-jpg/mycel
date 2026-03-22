@@ -224,6 +224,134 @@ function parseJSON<T>(text: string, caller: string): T | null {
   }
 }
 
+// ── Hallucination Guard ──────────────────────────────────────
+// Extracts significant words (4+ chars, not stop words) from AI output
+// and checks how many actually appear in the source text.
+// Returns null if too many fabricated words are detected.
+
+const STOP_WORDS = new Set([
+  "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+  "have", "has", "had", "do", "does", "did", "will", "would", "could",
+  "should", "may", "might", "shall", "can", "need", "ought", "used",
+  "to", "of", "in", "for", "on", "with", "at", "by", "from", "as",
+  "into", "through", "during", "before", "after", "above", "below",
+  "between", "out", "off", "over", "under", "again", "further", "then",
+  "once", "and", "but", "or", "nor", "not", "so", "yet", "both",
+  "either", "neither", "each", "every", "all", "any", "few", "more",
+  "most", "other", "some", "such", "no", "only", "own", "same", "than",
+  "too", "very", "just", "because", "about", "that", "this", "it", "its",
+  "i", "my", "me", "we", "our", "you", "your", "they", "them", "their",
+  "what", "which", "who", "when", "where", "why", "how", "if", "up",
+  "don't", "really", "think", "like", "get", "got", "make", "know",
+  "want", "also", "still", "keep", "been", "going", "much", "many",
+  "well", "back", "even", "take", "come", "good", "look", "feel",
+  "seem", "help", "show", "work", "move", "live", "give", "find",
+  "tell", "call", "try", "leave", "turn", "start", "might", "last",
+  "long", "great", "little", "right", "here", "there", "now",
+  "these", "those", "down", "while", "around", "never", "always",
+  "something", "anything", "everything", "nothing", "someone",
+  "important", "ready", "consider", "focus", "continue", "reflect",
+  "explore", "pattern", "theme", "week", "month", "time", "day",
+  "today", "yesterday", "tomorrow", "things", "thing", "been",
+  "made", "done", "went", "came", "said", "took", "gave",
+]);
+
+function extractSignificantWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/\*\*/g, "")           // strip bold markers
+    .replace(/[^a-z0-9\s'-]/g, " ") // keep letters, numbers, hyphens, apostrophes
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w));
+}
+
+function buildSourceWordSet(sourceTexts: string[]): Set<string> {
+  const words = new Set<string>();
+  for (const text of sourceTexts) {
+    for (const w of extractSignificantWords(text)) {
+      words.add(w);
+      // Also add common word stems (simple: strip trailing s, ed, ing, ly)
+      if (w.endsWith("s") && w.length > 4) words.add(w.slice(0, -1));
+      if (w.endsWith("ed") && w.length > 5) words.add(w.slice(0, -2));
+      if (w.endsWith("ing") && w.length > 6) words.add(w.slice(0, -3));
+      if (w.endsWith("ly") && w.length > 5) words.add(w.slice(0, -2));
+    }
+  }
+  return words;
+}
+
+function validateText(
+  aiText: string,
+  sourceWords: Set<string>,
+  caller: string,
+  threshold = 0.4 // at least 40% of AI's significant words must be in source
+): { valid: boolean; score: number; fabricated: string[] } {
+  const aiWords = extractSignificantWords(aiText);
+  if (aiWords.length === 0) return { valid: true, score: 1, fabricated: [] };
+
+  const fabricated: string[] = [];
+  let matched = 0;
+  for (const w of aiWords) {
+    // Check word and its stems
+    const stem1 = w.endsWith("s") && w.length > 4 ? w.slice(0, -1) : w;
+    const stem2 = w.endsWith("ed") && w.length > 5 ? w.slice(0, -2) : w;
+    const stem3 = w.endsWith("ing") && w.length > 6 ? w.slice(0, -3) : w;
+    if (sourceWords.has(w) || sourceWords.has(stem1) || sourceWords.has(stem2) || sourceWords.has(stem3)) {
+      matched++;
+    } else {
+      fabricated.push(w);
+    }
+  }
+
+  const score = matched / aiWords.length;
+  const valid = score >= threshold;
+
+  if (!valid) {
+    console.warn(
+      `[AI:${caller}] HALLUCINATION detected — score ${(score * 100).toFixed(0)}% (need ${threshold * 100}%), fabricated: ${fabricated.slice(0, 10).join(", ")}`
+    );
+  }
+
+  return { valid, score, fabricated };
+}
+
+// Validate all string fields in an AI response against source entries.
+// Returns null if ANY field fails validation (hallucination detected).
+function validateAIOutput<T>(
+  output: T,
+  sourceTexts: string[],
+  caller: string,
+  threshold = 0.4
+): T | null {
+  const sourceWords = buildSourceWordSet(sourceTexts);
+
+  // Collect all string values and string arrays from the output
+  for (const [key, value] of Object.entries(output as Record<string, unknown>)) {
+    if (typeof value === "string" && value.length > 0) {
+      const result = validateText(value, sourceWords, caller, threshold);
+      if (!result.valid) {
+        console.warn(`[AI:${caller}] field "${key}" failed — fabricated: ${result.fabricated.slice(0, 8).join(", ")}`);
+        return null;
+      }
+    } else if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        const item = value[i];
+        const text = typeof item === "string" ? item : typeof item === "object" && item !== null && "summary" in item ? (item as { summary: string }).summary : null;
+        if (text && text.length > 0) {
+          const result = validateText(text, sourceWords, caller, threshold);
+          if (!result.valid) {
+            console.warn(`[AI:${caller}] ${key}[${i}] failed — fabricated: ${result.fabricated.slice(0, 8).join(", ")}`);
+            return null;
+          }
+        }
+      }
+    }
+  }
+
+  console.log(`[AI:${caller}] hallucination check PASSED`);
+  return output;
+}
+
 function dayOfWeek(dateStr: string): string {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return "";
@@ -262,7 +390,9 @@ Rules: Address them directly as "you". If recurring theme without resolution, na
   );
 
   if (!result) return null;
-  return parseJSON<GuideResponse>(result, "guide");
+  const parsed = parseJSON<GuideResponse>(result, "guide");
+  if (!parsed) return null;
+  return validateAIOutput(parsed, entries.map((e) => e.content), "guide");
 }
 
 // ── Auto-correct ─────────────────────────────────────────────
@@ -308,7 +438,9 @@ Each string 1-2 sentences max. Bold the most important 2-3 words in each string 
   );
 
   if (!result) return null;
-  return parseJSON<AIWeeklyBrief>(result, "weekly");
+  const parsed = parseJSON<AIWeeklyBrief>(result, "weekly");
+  if (!parsed) return null;
+  return validateAIOutput(parsed, entries.map((e) => e.content), "weekly");
 }
 
 // ── Video Analysis ───────────────────────────────────────────
@@ -333,7 +465,9 @@ Return JSON:
 
   if (!result) return null;
   const parsed = parseJSON<Omit<VideoAnalysis, "title">>(result, "video");
-  return parsed ? { title: videoTitle, ...parsed } : null;
+  if (!parsed) return null;
+  const validated = validateAIOutput(parsed, [trimmed, videoTitle, userNote || ""], "video");
+  return validated ? { title: videoTitle, ...validated } : null;
 }
 
 // ── Web Analysis ─────────────────────────────────────────────
@@ -359,7 +493,9 @@ Return JSON:
 
   if (!result) return null;
   const parsed = parseJSON<Omit<WebAnalysis, "title">>(result, "web");
-  return parsed ? { title, ...parsed } : null;
+  if (!parsed) return null;
+  const validated = validateAIOutput(parsed, [trimmed, title, siteName, userNote || ""], "web");
+  return validated ? { title, ...validated } : null;
 }
 
 // ── Monthly Review ───────────────────────────────────────────
@@ -382,7 +518,9 @@ Return JSON:
   );
 
   if (!result) return null;
-  return parseJSON<AIMonthlyReview>(result, "monthly");
+  const parsed = parseJSON<AIMonthlyReview>(result, "monthly");
+  if (!parsed) return null;
+  return validateAIOutput(parsed, entries.map((e) => e.content), "monthly");
 }
 
 // ── Health Log ──────────────────────────────────────────────
@@ -400,29 +538,49 @@ export async function generateHealthLog(
   );
   if (recent.length === 0) return null;
 
-  const formatted = formatEntries(recent);
+  // Pre-group entries by day PROGRAMMATICALLY so the AI can't skip any day
+  const dayGroups: Record<string, string[]> = {};
+  const dayOrder: string[] = [];
+  for (const e of recent) {
+    const dow = dayOfWeek(e.localDate);
+    const dateKey = `${dow ? dow + " " : ""}${e.localDate}`.trim();
+    if (!dayGroups[dateKey]) {
+      dayGroups[dateKey] = [];
+      dayOrder.push(dateKey);
+    }
+    dayGroups[dateKey].push(e.content);
+  }
+
+  // Build a structured input: each day with its raw entries
+  const dayBlocks = dayOrder
+    .map((dateKey) => {
+      const contents = dayGroups[dateKey].map((c, i) => `  ${i + 1}. ${c}`).join("\n");
+      return `${dateKey}:\n${contents}`;
+    })
+    .join("\n\n");
 
   const result = await ask(
-    `Read these journal entries. Find ONLY mentions of gym, workout, exercise, running, walking, swimming, cycling, weights, stretching, or sports. Nothing else — no sleep, no diet, no hydration, no fasting, no mental health.
+    `Summarize what this person did each day. You MUST include ALL ${dayOrder.length} days listed below — do NOT skip any.
 
 RULES:
-- Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
-- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
-- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
-- If NO entries mention any exercise at all, return {"days": [], "summary": ""}
-- The "summary" field: exactly ONE sentence for the whole week. Combine a factual pattern observation with motivation. Example: "3 gym sessions this week — you're building momentum, keep it up." or "Only walked twice — get back in there." Keep it real, blunt, past tense.
-- Use "you" — speak directly
+- For each day: write ONE short sentence summarizing what was done. Past tense. Use "you".
+- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER add, infer, or guess anything not written. If an entry says "gym and push-ups", say exactly that — do NOT add "chest" or other details not mentioned.
+- If a day has multiple entries, combine the key points into one sentence.
+- Keep each summary short and blunt (under 20 words).
+- The "summary" field: ONE motivational sentence about the overall 5-day period. Keep it real and direct.
 
-Entries:
-${formatted}
+DAYS AND ENTRIES:
+${dayBlocks}
 
-IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
+You MUST return exactly ${dayOrder.length} days in the "days" array, in this order: ${dayOrder.map((d) => `"${d}"`).join(", ")}.
 
 Return JSON:
-{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "summary": "one sentence for the week"}`,
+{"days": [{"date": "day label exactly as given", "summary": "what you did"}], "summary": "one sentence"}`,
     "health-log"
   );
 
   if (!result) return null;
-  return parseJSON<AIHealthLog>(result, "health-log");
+  const parsed = parseJSON<AIHealthLog>(result, "health-log");
+  if (!parsed) return null;
+  return validateAIOutput(parsed, recent.map((e) => e.content), "health-log");
 }
