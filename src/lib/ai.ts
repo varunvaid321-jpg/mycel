@@ -262,7 +262,7 @@ function extractSignificantWords(text: string): string[] {
     .replace(/\*\*/g, "")           // strip bold markers
     .replace(/[^a-z0-9\s'-]/g, " ") // keep letters, numbers, hyphens, apostrophes
     .split(/\s+/)
-    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w));
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
 }
 
 function buildSourceWordSet(sourceTexts: string[]): Set<string> {
@@ -271,10 +271,10 @@ function buildSourceWordSet(sourceTexts: string[]): Set<string> {
     for (const w of extractSignificantWords(text)) {
       words.add(w);
       // Also add common word stems (simple: strip trailing s, ed, ing, ly)
-      if (w.endsWith("s") && w.length > 4) words.add(w.slice(0, -1));
-      if (w.endsWith("ed") && w.length > 5) words.add(w.slice(0, -2));
-      if (w.endsWith("ing") && w.length > 6) words.add(w.slice(0, -3));
-      if (w.endsWith("ly") && w.length > 5) words.add(w.slice(0, -2));
+      if (w.endsWith("s") && w.length > 3) words.add(w.slice(0, -1));
+      if (w.endsWith("ed") && w.length > 4) words.add(w.slice(0, -2));
+      if (w.endsWith("ing") && w.length > 5) words.add(w.slice(0, -3));
+      if (w.endsWith("ly") && w.length > 4) words.add(w.slice(0, -2));
     }
   }
   return words;
@@ -392,7 +392,7 @@ Rules: Address them directly as "you". If recurring theme without resolution, na
   if (!result) return null;
   const parsed = parseJSON<GuideResponse>(result, "guide");
   if (!parsed) return null;
-  return validateAIOutput(parsed, entries.map((e) => e.content), "guide");
+  return validateAIOutput(parsed, entries.map((e) => e.content), "guide", 0.25);
 }
 
 // ── Auto-correct ─────────────────────────────────────────────
@@ -583,5 +583,5 @@ Return JSON:
   if (!result) return null;
   const parsed = parseJSON<AIHealthLog>(result, "health-log");
   if (!parsed) return null;
-  return validateAIOutput(parsed, recent.map((e) => e.content), "health-log");
+  return validateAIOutput(parsed, recent.map((e) => e.content), "health-log", 0.3);
 }
