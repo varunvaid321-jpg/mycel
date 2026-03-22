@@ -78,20 +78,23 @@ export async function GET() {
   }
 
   // Fallback rule-based data (always computed — cheap)
-  const reminders = entries
-    .filter((e) => e.category === "signal")
-    .slice(0, 5)
-    .map((e) => e.content);
+  // Deduplicate by content to avoid showing the same entry multiple times
+  const uniqueContent = (items: string[], max: number) => [...new Set(items)].slice(0, max);
 
-  const actions = entries
-    .filter((e) => e.category === "fruit")
-    .slice(0, 5)
-    .map((e) => e.content);
+  const reminders = uniqueContent(
+    entries.filter((e) => e.category === "signal").map((e) => e.content),
+    5
+  );
 
-  const letting_go = entries
-    .filter((e) => e.category === "decompose")
-    .slice(0, 3)
-    .map((e) => e.content);
+  const actions = uniqueContent(
+    entries.filter((e) => e.category === "fruit").map((e) => e.content),
+    5
+  );
+
+  const letting_go = uniqueContent(
+    entries.filter((e) => e.category === "decompose").map((e) => e.content),
+    3
+  );
 
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
