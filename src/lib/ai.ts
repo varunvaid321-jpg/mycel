@@ -104,15 +104,7 @@ export interface AIWeeklyBrief {
   prioritizedActions: string[];
 }
 
-export interface HealthDayLog {
-  date: string;
-  summary: string;
-}
-
-export interface AIHealthLog {
-  days: HealthDayLog[];
-  summary: string;
-}
+// Health types moved to src/lib/health/types.ts
 
 export interface AIMonthlyReview {
   topFocusAreas: { topic: string; count: number }[];
@@ -396,87 +388,4 @@ Return JSON:
 
 // ── Workout Log (100% code — no AI, no hallucination) ────────
 
-// ── Workout Log via Groq (one call, reads all entries, no hallucination) ──
-
-export async function generateHealthLog(
-  thisWeekEntries: Entry[],
-  lastWeekEntries: Entry[]
-): Promise<AIHealthLog | null> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
-
-  // Use ALL entries from last 30 days for context, exclude imported
-  const allEntries = [...thisWeekEntries, ...lastWeekEntries].filter(
-    (e) => !e.tags?.includes("imported")
-  );
-  if (allEntries.length === 0) return null;
-
-  // Format entries with dates
-  const formatted = allEntries
-    .map((e) => {
-      const dow = dayOfWeek(e.localDate);
-      return `[${dow ? dow + " " : ""}${e.localDate}] ${e.content}`;
-    })
-    .join("\n");
-
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: `You read personal journal entries and report ONLY on physical activity — gym, exercise, sports, walks, push-ups, yoga, meditation, cricket, swimming, etc.
-
-STRICT RULES:
-- Only report activities the person ACTUALLY DID. Never report intentions ("want to", "need to", "should", "planning to").
-- Only report the PERSON'S OWN activity. If they mention someone else exercising (kids swimming, wife at dance), skip it.
-- Use the person's own words. Never add exercises or details they didn't mention.
-- Each day: max 12 words summarizing what they did.
-- Skip days with no physical activity entirely.
-- If ZERO physical activity in all entries, return {"days":[],"summary":""}
-- The summary: one sentence — count of active days this week, what types they did, and a short motivating suggestion for next week based on what's missing (e.g. more cardio, try a sport, add weights). Speak directly using "you".
-- Use EXACT dates from the entries. Never guess dates.`
-          },
-          {
-            role: "user",
-            content: `Here are my journal entries from the last month. Tell me what I did workout-wise, day by day for the last 7 days only. Use the full month for context on what I like and what I should do more of.\n\n${formatted}`
-          },
-        ],
-        max_tokens: 500,
-        temperature: 0,
-      }),
-    });
-
-    if (res.status === 429) {
-      console.warn("[groq:health] RATE LIMITED");
-      return null;
-    }
-    if (!res.ok) {
-      console.error(`[groq:health] FAIL ${res.status}`);
-      return null;
-    }
-
-    const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content?.trim();
-    if (!reply) return null;
-
-    const parsed = parseJSON<AIHealthLog>(reply, "groq-health");
-    if (!parsed || !parsed.days) return null;
-
-    // Filter out empty days
-    parsed.days = parsed.days.filter((d) => d.summary && d.summary.length > 2);
-    if (parsed.days.length === 0 && !parsed.summary) return null;
-
-    console.log(`[groq:health] OK — ${parsed.days.length} active days`);
-    return parsed;
-  } catch (err) {
-    console.error("[groq:health] ERROR:", err instanceof Error ? err.message : err);
-    return null;
-  }
-}
+// Health monitor moved to src/lib/health/ — dedicated module with extraction pipeline

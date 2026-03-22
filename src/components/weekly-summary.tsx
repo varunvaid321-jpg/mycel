@@ -20,14 +20,27 @@ interface AIBrief {
   prioritizedActions: string[];
 }
 
-interface HealthDayLog {
+interface HealthActivity {
+  label: string;
+  type: string;
+  confidence: string;
+}
+
+interface HealthDay {
   date: string;
-  summary: string;
+  activities: HealthActivity[];
+}
+
+interface WeekSummary {
+  active_days: number;
+  pattern_note: string;
+  next_best_action: string;
+  motivation: string;
 }
 
 interface HealthLog {
-  days: HealthDayLog[];
-  summary: string;
+  days: HealthDay[];
+  week_summary: WeekSummary | null;
 }
 
 interface WeeklyData {
@@ -142,25 +155,35 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log */}
-              {data.healthLog && data.healthLog.days.length > 0 && (
+              {data.healthLog && data.healthLog.days && data.healthLog.days.length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Workout Log
+                    Health Monitor
                   </h3>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {data.healthLog.days.map((day, i) => (
-                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                      <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
                         <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
                         </span>
-                        <span className="text-text-muted">{day.summary}</span>
+                        <span className="text-text-muted">
+                          {day.activities.map((a) => a.label).join(" · ")}
+                        </span>
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.summary && (
-                    <p className="mt-3 text-sm text-spore/90 italic">
-                      {data.healthLog.summary}
-                    </p>
+                  {data.healthLog.week_summary && (
+                    <div className="mt-3 space-y-1">
+                      {data.healthLog.week_summary.pattern_note && (
+                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.pattern_note}</p>
+                      )}
+                      {data.healthLog.week_summary.next_best_action && (
+                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.next_best_action}</p>
+                      )}
+                      {data.healthLog.week_summary.motivation && (
+                        <p className="text-sm text-spore/90 italic">{data.healthLog.week_summary.motivation}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -213,25 +236,35 @@ export default function WeeklySummary() {
               )}
 
               {/* Health Log (also shown in fallback mode) */}
-              {data.healthLog && data.healthLog.days.length > 0 && (
+              {data.healthLog && data.healthLog.days && data.healthLog.days.length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Workout Log
+                    Health Monitor
                   </h3>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {data.healthLog.days.map((day, i) => (
-                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                      <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
                         <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">
                           {day.date}
                         </span>
-                        <span className="text-text-muted">{day.summary}</span>
+                        <span className="text-text-muted">
+                          {day.activities.map((a) => a.label).join(" · ")}
+                        </span>
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.summary && (
-                    <p className="mt-3 text-sm text-spore/90 italic">
-                      {data.healthLog.summary}
-                    </p>
+                  {data.healthLog.week_summary && (
+                    <div className="mt-3 space-y-1">
+                      {data.healthLog.week_summary.pattern_note && (
+                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.pattern_note}</p>
+                      )}
+                      {data.healthLog.week_summary.next_best_action && (
+                        <p className="text-sm text-text-muted">{data.healthLog.week_summary.next_best_action}</p>
+                      )}
+                      {data.healthLog.week_summary.motivation && (
+                        <p className="text-sm text-spore/90 italic">{data.healthLog.week_summary.motivation}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

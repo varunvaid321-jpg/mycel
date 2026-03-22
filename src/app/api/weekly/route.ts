@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { generateWeeklyBrief, generateHealthLog, type AIWeeklyBrief } from "@/lib/ai";
+import { generateWeeklyBrief, type AIWeeklyBrief } from "@/lib/ai";
+import { generateWeeklyHealthMonitor, type HealthMonitorOutput } from "@/lib/health";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,8 @@ export async function GET() {
   }
 
   // Health log: code-based, no AI (keyword matching + trend comparison)
-  // Health log: Groq reads all 30 days for context, reports last 7 days
-  const healthLog = await generateHealthLog(entries, monthEntries);
+  // Health monitor: structured pipeline (extract → validate → aggregate → summarize)
+  const healthLog = await generateWeeklyHealthMonitor(entries, monthEntries);
 
   // Fallback rule-based data (always computed — cheap)
   const reminders = entries
