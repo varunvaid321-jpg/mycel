@@ -10,11 +10,13 @@ export const dynamic = "force-dynamic";
 // Re-generates only when entry count changes (new entry planted).
 let cachedBrief: AIWeeklyBrief | null = null;
 let cachedEntryCount = -1;
+let cachedLatestUpdate = "";
 let cachedAt = 0;
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
 
 let cachedHealthLog: AIHealthLog | null = null;
 let cachedHealthCount = -1;
+let cachedHealthUpdate = "";
 let cachedHealthAt = 0;
 
 export async function GET() {
@@ -38,11 +40,15 @@ export async function GET() {
   // Filter out imported entries for AI analysis
   const organicEntries = entries.filter((e) => !e.tags?.includes("imported"));
 
-  // AI brief: use cache if entry count unchanged and not too stale
+  // AI brief: use cache if entry count + latest update unchanged and not too stale
   const now = Date.now();
+  const latestUpdate = organicEntries.length > 0
+    ? Math.max(...organicEntries.map((e) => e.updatedAt.getTime())).toString()
+    : "";
   const cacheValid =
     cachedBrief &&
     cachedEntryCount === organicEntries.length &&
+    cachedLatestUpdate === latestUpdate &&
     now - cachedAt < CACHE_MAX_AGE_MS;
 
   let aiBrief: AIWeeklyBrief | null;
@@ -55,6 +61,7 @@ export async function GET() {
     if (aiBrief) {
       cachedBrief = aiBrief;
       cachedEntryCount = organicEntries.length;
+      cachedLatestUpdate = latestUpdate;
       cachedAt = now;
     }
   }
@@ -63,6 +70,7 @@ export async function GET() {
   const healthCacheValid =
     cachedHealthLog &&
     cachedHealthCount === organicEntries.length &&
+    cachedHealthUpdate === latestUpdate &&
     now - cachedHealthAt < CACHE_MAX_AGE_MS;
 
   let healthLog: AIHealthLog | null;
@@ -73,6 +81,7 @@ export async function GET() {
     if (healthLog) {
       cachedHealthLog = healthLog;
       cachedHealthCount = organicEntries.length;
+      cachedHealthUpdate = latestUpdate;
       cachedHealthAt = now;
     }
   }

@@ -20,4 +20,7 @@ model Entry {
   tags           String   @default("")
   linkedEntryIds String   @default("")
   imagePath      String   @default("")
+
+  @@index([archived, createdAt])
+  @@index([category])
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import MicButton, { type MicButtonHandle } from "./mic-button";
 import { detectEmotion } from "@/lib/emotional-detect";
 import {
@@ -37,6 +37,13 @@ export default function Compose({ onSaved }: ComposeProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const micRef = useRef<MicButtonHandle>(null);
+
+  // Revoke Object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasUrl = URL_REGEX.test(content.trim());
   const emotion = useMemo(() => detectEmotion(content), [content]);
