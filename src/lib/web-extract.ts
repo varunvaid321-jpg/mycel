@@ -1,38 +1,10 @@
 import * as cheerio from "cheerio";
 
-function isBlockedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    // Only allow http/https
-    if (!["http:", "https:"].includes(parsed.protocol)) return true;
-    // Block private/internal IPs and metadata endpoints
-    const host = parsed.hostname.toLowerCase();
-    if (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "0.0.0.0" ||
-      host.startsWith("10.") ||
-      host.startsWith("172.") ||
-      host.startsWith("192.168.") ||
-      host === "169.254.169.254" ||
-      host.endsWith(".internal") ||
-      host.endsWith(".local")
-    ) return true;
-    return false;
-  } catch {
-    return true;
-  }
-}
-
 export async function extractWebContent(url: string): Promise<{
   title: string;
   text: string;
   siteName: string;
 }> {
-  if (isBlockedUrl(url)) {
-    throw new Error("URL not allowed");
-  }
-
   const res = await fetch(url, {
     headers: {
       "User-Agent":
@@ -44,12 +16,6 @@ export async function extractWebContent(url: string): Promise<{
 
   if (!res.ok) {
     throw new Error(`Failed to fetch: ${res.status}`);
-  }
-
-  // Block responses larger than 5MB
-  const contentLength = res.headers.get("content-length");
-  if (contentLength && parseInt(contentLength) > 5 * 1024 * 1024) {
-    throw new Error("Response too large");
   }
 
   const html = await res.text();
