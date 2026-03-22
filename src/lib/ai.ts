@@ -408,10 +408,11 @@ export async function generateHealthLog(
 
 RULES:
 - Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
-- Each day: one short blunt sentence about what they did. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
+- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
+- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
 - If NO entries mention any exercise at all, return {"days": [], "insight": "", "motivation": ""}
-- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual.
-- The "motivation" field: one short line. Keep it real, not cheesy.
+- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual, past tense.
+- The "motivation" field: one short line. Keep it real, not cheesy. Motivate to keep going or do more.
 - Use "you" — speak directly
 
 Entries:
