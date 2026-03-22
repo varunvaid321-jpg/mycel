@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 import { MIC_BASE, MIC_LISTENING, MIC_IDLE, TEXT_META } from "@/lib/design-tokens";
+
+export interface MicButtonHandle {
+  stop: () => void;
+}
 
 interface MicButtonProps {
   onTranscript: (text: string) => void;
@@ -9,7 +13,7 @@ interface MicButtonProps {
   onListeningChange: (listening: boolean) => void;
 }
 
-export default function MicButton({ onTranscript, onInterim, onListeningChange }: MicButtonProps) {
+const MicButton = forwardRef<MicButtonHandle, MicButtonProps>(function MicButton({ onTranscript, onInterim, onListeningChange }, ref) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(true);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -20,6 +24,18 @@ export default function MicButton({ onTranscript, onInterim, onListeningChange }
     onTranscriptRef.current = onTranscript;
     onInterimRef.current = onInterim;
   }, [onTranscript, onInterim]);
+
+  useImperativeHandle(ref, () => ({
+    stop() {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+        setListening(false);
+        onListeningChange(false);
+        onInterimRef.current("");
+      }
+    },
+  }));
 
   function toggle() {
     if (typeof window === "undefined") return;
@@ -103,4 +119,6 @@ export default function MicButton({ onTranscript, onInterim, onListeningChange }
       </svg>
     </button>
   );
-}
+});
+
+export default MicButton;

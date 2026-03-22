@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import MicButton from "./mic-button";
+import MicButton, { type MicButtonHandle } from "./mic-button";
 import { detectEmotion } from "@/lib/emotional-detect";
 import {
   INPUT_TEXTAREA,
@@ -34,6 +34,7 @@ export default function Compose({ onSaved }: ComposeProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const micRef = useRef<MicButtonHandle>(null);
 
   const hasUrl = URL_REGEX.test(content.trim());
   const emotion = useMemo(() => detectEmotion(content), [content]);
@@ -78,7 +79,19 @@ export default function Compose({ onSaved }: ComposeProps) {
   }
 
   async function handleSave() {
-    if ((!content.trim() && imageFiles.length === 0) || saving) return;
+    // Stop recording and flush any interim speech into content before saving
+    let finalContent = content;
+    if (listening && interim) {
+      finalContent = finalContent ? finalContent + " " + interim : interim;
+      setContent(finalContent);
+      setInterim("");
+    }
+    if (listening) {
+      micRef.current?.stop();
+      setListening(false);
+    }
+
+    if ((!finalContent.trim() && imageFiles.length === 0) || saving) return;
     setSaving(true);
     setError("");
 
@@ -99,20 +112,22 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       let res: Response;
 
-      if (hasUrl && imageFiles.length === 0) {
-        const urlMatch = content.match(URL_REGEX);
+      const hasUrlNow = URL_REGEX.test(finalContent.trim());
+
+      if (hasUrlNow && imageFiles.length === 0) {
+        const urlMatch = finalContent.match(URL_REGEX);
         const url = urlMatch ? urlMatch[0] : "";
-        const userNote = content.replace(url, "").trim();
+        const userNote = finalContent.replace(url, "").trim();
 
         res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, userNote, localDate, localTime }),
+          body: JSON.stringify({ content: finalContent, userNote, localDate, localTime }),
         });
       } else if (imageFiles.length > 0) {
         // Multipart upload
         const formData = new FormData();
-        formData.append("content", content);
+        formData.append("content", finalContent);
         formData.append("localDate", localDate);
         formData.append("localTime", localTime);
         imageFiles.forEach((file) => formData.append("image", file));
@@ -125,7 +140,7 @@ export default function Compose({ onSaved }: ComposeProps) {
         res = await fetch("/api/entries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content, localDate, localTime }),
+          body: JSON.stringify({ content: finalContent, localDate, localTime }),
         });
       }
 
@@ -275,6 +290,7 @@ export default function Compose({ onSaved }: ComposeProps) {
             </button>
 
             <MicButton
+              ref={micRef}
               onTranscript={handleTranscript}
               onInterim={handleInterim}
               onListeningChange={handleListeningChange}
