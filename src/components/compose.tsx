@@ -30,8 +30,8 @@ export default function Compose({ onSaved }: ComposeProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,27 +54,31 @@ export default function Compose({ onSaved }: ComposeProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (imageFiles.length >= 3) {
+      setError("Max 3 photos per entry");
+      return;
+    }
+
     // Max 10MB
     if (file.size > 10 * 1024 * 1024) {
       setError("Image too large — max 10MB");
       return;
     }
 
-    setImageFile(file);
-    const url = URL.createObjectURL(file);
-    setImagePreview(url);
+    setImageFiles((prev) => [...prev, file]);
+    setImagePreviews((prev) => [...prev, URL.createObjectURL(file)]);
     setError("");
-  }
-
-  function removeImage() {
-    setImageFile(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  function removeImage(index: number) {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
-    if ((!content.trim() && !imageFile) || saving) return;
+    if ((!content.trim() && imageFiles.length === 0) || saving) return;
     setSaving(true);
     setError("");
 
@@ -95,7 +99,7 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       let res: Response;
 
-      if (hasUrl && !imageFile) {
+      if (hasUrl && imageFiles.length === 0) {
         const urlMatch = content.match(URL_REGEX);
         const url = urlMatch ? urlMatch[0] : "";
         const userNote = content.replace(url, "").trim();
@@ -105,13 +109,13 @@ export default function Compose({ onSaved }: ComposeProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content, userNote, localDate, localTime }),
         });
-      } else if (imageFile) {
+      } else if (imageFiles.length > 0) {
         // Multipart upload
         const formData = new FormData();
         formData.append("content", content);
         formData.append("localDate", localDate);
         formData.append("localTime", localTime);
-        formData.append("image", imageFile);
+        imageFiles.forEach((file) => formData.append("image", file));
 
         res = await fetch("/api/entries", {
           method: "POST",
@@ -134,7 +138,9 @@ export default function Compose({ onSaved }: ComposeProps) {
 
       setContent("");
       setInterim("");
-      removeImage();
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+      setImageFiles([]);
+      setImagePreviews([]);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -161,7 +167,7 @@ export default function Compose({ onSaved }: ComposeProps) {
   return (
     <div className="mb-8">
       <div
-        className={`${COMPOSE_BOX} ${listening || hasUrl || imageFile ? COMPOSE_BOX_ACTIVE : COMPOSE_BOX_IDLE}`}
+        className={`${COMPOSE_BOX} ${listening || hasUrl || imageFiles.length > 0 ? COMPOSE_BOX_ACTIVE : COMPOSE_BOX_IDLE}`}
       >
         <div className="relative">
           <textarea
@@ -187,24 +193,28 @@ export default function Compose({ onSaved }: ComposeProps) {
           )}
         </div>
 
-        {/* Image preview */}
-        {imagePreview && (
-          <div className="mt-3 relative inline-block">
-            <img
-              src={imagePreview}
-              alt="Upload preview"
-              className="max-h-32 rounded-lg border border-border object-cover"
-            />
-            <button
-              onClick={removeImage}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-surface border border-border
-                flex items-center justify-center text-text-faint hover:text-signal hover:border-signal/40 transition-all"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+        {/* Image previews */}
+        {imagePreviews.length > 0 && (
+          <div className="mt-3 flex gap-2 flex-wrap">
+            {imagePreviews.map((preview, i) => (
+              <div key={i} className="relative inline-block">
+                <img
+                  src={preview}
+                  alt={`Upload preview ${i + 1}`}
+                  className="max-h-32 rounded-lg border border-border object-cover"
+                />
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-surface border border-border
+                    flex items-center justify-center text-text-faint hover:text-signal hover:border-signal/40 transition-all"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -229,9 +239,9 @@ export default function Compose({ onSaved }: ComposeProps) {
                 </span>
                 speaking — tap mic to stop
               </span>
-            ) : imageFile ? (
+            ) : imageFiles.length > 0 ? (
               <span className="text-accent">
-                photo attached{content.trim() ? "" : " — add a thought or plant as-is"}
+                {imageFiles.length} photo{imageFiles.length > 1 ? "s" : ""} attached{imageFiles.length < 3 ? " — add more or" : ""}{content.trim() ? "" : " add a thought or"} plant as-is
               </span>
             ) : hasUrl ? (
               <span className="text-signal">
@@ -272,10 +282,10 @@ export default function Compose({ onSaved }: ComposeProps) {
             />
             <button
               onClick={handleSave}
-              disabled={(!content.trim() && !imageFile) || saving}
+              disabled={(!content.trim() && imageFiles.length === 0) || saving}
               className={`${BTN_PRIMARY} disabled:hover:bg-transparent disabled:hover:text-accent`}
             >
-              {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl && !imageFile ? "analyze" : "plant"}
+              {saving && hasUrl ? "analyzing..." : saving ? "..." : hasUrl && imageFiles.length === 0 ? "analyze" : "plant"}
             </button>
           </div>
         </div>
