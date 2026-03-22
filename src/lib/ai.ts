@@ -403,20 +403,22 @@ export async function generateHealthLog(
   const formatted = formatEntries(recent);
 
   const result = await ask(
-    `Read these journal entries. Find ONLY mentions of gym, workout, exercise, running, walking, swimming, cycling, weights, stretching, or sports. Nothing else — no sleep, no diet, no hydration, no fasting, no mental health.
+    `Read these journal entries. Extract ONLY days where the person actually exercised or worked out (gym, running, walking, swimming, cycling, weights, stretching, sports).
 
-RULES:
-- Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
-- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
-- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
+CRITICAL RULES:
+- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER infer, guess, or add exercises that aren't explicitly written. If an entry says "gym and push-ups", say exactly that — do NOT add muscle groups or exercises that aren't mentioned.
+- Strip out anything that isn't exercise (e.g. "planning for family activities" is NOT exercise — exclude it).
+- Each day: one short blunt PAST TENSE sentence using ONLY the user's own words for what they did.
+- Only include days where they actually exercised. No exercise that day = skip it entirely.
+- If multiple entries on the same day mention different workouts, combine them into one line.
 - If NO entries mention any exercise at all, return {"days": [], "summary": ""}
-- The "summary" field: exactly ONE sentence for the whole week. Combine a factual pattern observation with motivation. Example: "3 gym sessions this week — you're building momentum, keep it up." or "Only walked twice — get back in there." Keep it real, blunt, past tense.
-- Use "you" — speak directly
+- The "summary" field: exactly ONE sentence. Factual count of sessions + short motivation. Use "you" — speak directly.
+- This is a review read AFTER the fact — always past tense, never present tense.
 
 Entries:
 ${formatted}
 
-IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
+IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided. Include ALL exercise entries — do not skip any.
 
 Return JSON:
 {"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "summary": "one sentence for the week"}`,
