@@ -5,6 +5,8 @@ import { autoCorrect } from "@/lib/ai";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
+export const dynamic = "force-dynamic";
+
 const IMAGE_DIR = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
 
 export async function GET(request: Request) {
