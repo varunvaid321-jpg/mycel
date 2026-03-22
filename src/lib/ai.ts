@@ -560,19 +560,20 @@ export async function generateHealthLog(
     .join("\n\n");
 
   const result = await ask(
-    `Summarize what this person did each day. You MUST include ALL ${dayOrder.length} days listed below — do NOT skip any.
+    `Read these journal entries. Extract ONLY days where the person did exercise or workout (gym, running, walking, swimming, cycling, weights, stretching, push-ups, sports, yoga, etc.). Skip days with no exercise mentioned.
 
-RULES:
-- For each day: write ONE short sentence summarizing what was done. Past tense. Use "you".
-- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER add, infer, or guess anything not written. If an entry says "gym and push-ups", say exactly that — do NOT add "chest" or other details not mentioned.
-- If a day has multiple entries, combine the key points into one sentence.
-- Keep each summary short and blunt (under 20 words).
-- The "summary" field: ONE motivational sentence about the overall 5-day period. Keep it real and direct.
+CRITICAL RULES:
+- ONLY use words and details that ACTUALLY APPEAR in the entries. NEVER add, infer, or guess anything not written. If an entry says "gym and push-ups", say exactly that — do NOT add "chest", "triceps", or other details not mentioned.
+- Strip out anything that isn't exercise (e.g. "planning for family activities" is NOT exercise — exclude it).
+- Each day: ONE short blunt PAST TENSE sentence about the workout only, using the user's own words. Under 20 words.
+- If multiple entries on the same day mention different workouts, combine them into one line.
+- If NO entries mention any exercise at all, return {"days": [], "summary": ""}
+- The "summary" field: ONE sentence — factual count of workout sessions + short motivation. Use "you".
 
 DAYS AND ENTRIES:
 ${dayBlocks}
 
-You MUST return exactly ${dayOrder.length} days in the "days" array, in this order: ${dayOrder.map((d) => `"${d}"`).join(", ")}.
+IMPORTANT: Use the EXACT day labels as given above. Include ALL days where exercise was mentioned — do not skip any workout day.
 
 Return JSON:
 {"days": [{"date": "day label exactly as given", "summary": "what you did"}], "summary": "one sentence"}`,
