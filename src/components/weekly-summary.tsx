@@ -208,7 +208,7 @@ function WorkoutLog({ healthLog }: { healthLog: HealthLog }) {
   return (
     <div className="pt-3 border-t border-border">
       <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-        Last 5 Days
+        Workout Log
       </h3>
       <ul className="space-y-1.5">
         {healthLog.days.map((day, i) => (
