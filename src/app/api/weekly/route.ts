@@ -35,23 +35,26 @@ export async function GET() {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
 
+  // Filter out imported entries for AI analysis
+  const organicEntries = entries.filter((e) => !e.tags?.includes("imported"));
+
   // AI brief: use cache if entry count unchanged and not too stale
   const now = Date.now();
   const cacheValid =
     cachedBrief &&
-    cachedEntryCount === entries.length &&
+    cachedEntryCount === organicEntries.length &&
     now - cachedAt < CACHE_MAX_AGE_MS;
 
   let aiBrief: AIWeeklyBrief | null;
   if (cacheValid) {
     aiBrief = cachedBrief;
-    console.log(`[weekly] cache HIT — ${entries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
+    console.log(`[weekly] cache HIT — ${organicEntries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
   } else {
-    console.log(`[weekly] cache MISS — entries: ${entries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
-    aiBrief = await generateWeeklyBrief(entries);
+    console.log(`[weekly] cache MISS — entries: ${organicEntries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
+    aiBrief = await generateWeeklyBrief(organicEntries);
     if (aiBrief) {
       cachedBrief = aiBrief;
-      cachedEntryCount = entries.length;
+      cachedEntryCount = organicEntries.length;
       cachedAt = now;
     }
   }
@@ -59,17 +62,17 @@ export async function GET() {
   // Health log: separate cache, same invalidation logic
   const healthCacheValid =
     cachedHealthLog &&
-    cachedHealthCount === entries.length &&
+    cachedHealthCount === organicEntries.length &&
     now - cachedHealthAt < CACHE_MAX_AGE_MS;
 
   let healthLog: AIHealthLog | null;
   if (healthCacheValid) {
     healthLog = cachedHealthLog;
   } else {
-    healthLog = await generateHealthLog(entries);
+    healthLog = await generateHealthLog(organicEntries);
     if (healthLog) {
       cachedHealthLog = healthLog;
-      cachedHealthCount = entries.length;
+      cachedHealthCount = organicEntries.length;
       cachedHealthAt = now;
     }
   }
