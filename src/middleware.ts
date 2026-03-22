@@ -44,11 +44,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Accept old "authenticated" value during transition
-  if (session.value === "authenticated") {
-    return NextResponse.next();
-  }
-
   // Verify signed token structure + expiry
   if (!verifyToken(session.value, process.env.MYCEL_PASSPHRASE || "")) {
     // Token expired or invalid — redirect to login
