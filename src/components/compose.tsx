@@ -258,7 +258,6 @@ export default function Compose({ onSaved }: ComposeProps) {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handleImageSelect}
               className="hidden"
             />

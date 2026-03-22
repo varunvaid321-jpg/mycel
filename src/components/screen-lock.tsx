@@ -14,7 +14,7 @@ interface ScreenLockProps {
 }
 
 export default function ScreenLock({ children }: ScreenLockProps) {
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(true);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
