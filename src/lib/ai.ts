@@ -403,11 +403,16 @@ const EXERCISE_KEYWORDS = {
 };
 
 const NEGATIVE_PATTERNS = [
-  /\b(did\s+not|didn'?t|couldn'?t|can'?t|won'?t|not\s+able)\b.*\b(exercise|workout|work\s+out|play|gym|run|walk|swim)/i,
+  /\b(did\s+not|didn'?t|couldn'?t|can'?t|won'?t|not\s+able)\b.*\b(exercise|workout|work\s+out|play|gym|run|walk|swim|motivat)/i,
   /\bskipped?\b.*\b(exercise|workout|work\s+out|gym)/i,
-  /\bwanted\s+to\s+but\b/i,
+  /\bwanted?\s+to\s+but\b/i,
   /\bno\s+(workout|exercise|gym)\b/i,
   /\brest\s+day\b/i,
+  /\bdon'?t\s+feel\s+motivat/i,
+  /\bunable\s+to\s+(get|exercise|work|move)/i,
+  /\bletharg/i,
+  /\bwant\s+to\s+(start|work|exercise|gym)\b.*\bbut\b/i,
+  /\b(ensure|make\s+sure|tell|ask|want)\b.*\b(kyna|krish|puja|kids?|daughter|son|wife)\b.*\b(swim|soccer|volleyball|exercise|active|sport)/i,
 ];
 
 function detectExerciseType(text: string): { cardio: boolean; weights: boolean; sport: boolean } {
@@ -424,6 +429,23 @@ function isExerciseEntry(text: string): boolean {
   // Check if any exercise keyword matches
   const types = detectExerciseType(text);
   return types.cardio || types.weights || types.sport;
+}
+
+// Extract only the sentence(s) that mention exercise, not the entire journal entry
+function extractExercisePart(text: string): string {
+  const allKeywords = [
+    ...EXERCISE_KEYWORDS.cardio,
+    ...EXERCISE_KEYWORDS.weights,
+    ...EXERCISE_KEYWORDS.sport,
+  ];
+  // Split into sentences
+  const sentences = text.split(/[.!?\n]+/).map((s) => s.trim()).filter(Boolean);
+  const matched = sentences.filter((s) =>
+    allKeywords.some((r) => r.test(s)) && !NEGATIVE_PATTERNS.some((r) => r.test(s))
+  );
+  if (matched.length === 0) return text.slice(0, 80);
+  const result = matched.join(". ");
+  return result.length > 120 ? result.slice(0, 117) + "..." : result;
 }
 
 export function generateHealthLog(
@@ -455,8 +477,8 @@ export function generateHealthLog(
       dayGroups[dateKey] = [];
       dayOrder.push(dateKey);
     }
-    // Truncate individual entry to 100 chars
-    const text = e.content.length > 100 ? e.content.slice(0, 97) + "..." : e.content;
+    // Extract only the exercise-relevant part, not the full journal entry
+    const text = extractExercisePart(e.content);
     dayGroups[dateKey].push(text);
   }
 
