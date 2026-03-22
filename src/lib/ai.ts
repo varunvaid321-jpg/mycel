@@ -423,35 +423,101 @@ function detectExerciseType(text: string): { cardio: boolean; weights: boolean; 
   };
 }
 
+// Patterns that indicate talking about SOMEONE ELSE's exercise, not yours
+const THIRD_PERSON_EXERCISE = [
+  /\b(kyna|krish|puja|daughter|son|wife|kids?|she|her|he|his|them|they)\b.{0,30}\b(dance|swim|soccer|volleyball|walk|exercise|sport|active|gym|yoga)/i,
+  /\b(ask|told|tell|want|ensure|make\s+sure)\b.{0,30}\b(walk|swim|exercise|sport|active|dance|yoga)/i,
+  /\b(select|pick|buy|choose)\b.{0,20}\b(swim|sport|dance|gym)/i,
+];
+
 function isExerciseEntry(text: string): boolean {
   // Check negative context first
   if (NEGATIVE_PATTERNS.some((r) => r.test(text))) return false;
+  // Check if talking about someone else's exercise
+  if (THIRD_PERSON_EXERCISE.some((r) => r.test(text))) return false;
   // Check if any exercise keyword matches
   const types = detectExerciseType(text);
   return types.cardio || types.weights || types.sport;
 }
 
-// Extract only the sentence(s) that mention exercise, not the entire journal entry
-function extractExercisePart(text: string): string {
+// ── Groq API (free tier — 14,400 req/day, separate from Cloudflare) ──
+// Used ONLY for workout log extraction — keeps Cloudflare quota for weekly/monthly/guide
+
+async function askGroq(text: string): Promise<string | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: "Extract ONLY the physical activity from this journal entry. Use the person's exact words. Max 15 words. If no exercise happened, return NONE. Never add details not in the text." },
+          { role: "user", content: text },
+        ],
+        max_tokens: 50,
+        temperature: 0,
+      }),
+    });
+
+    if (res.status === 429) {
+      console.warn("[groq] RATE LIMITED — skipping");
+      return null;
+    }
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const reply = data?.choices?.[0]?.message?.content?.trim();
+    if (!reply || reply === "NONE" || reply.length < 3) return null;
+
+    // Validate: every significant word in the reply must exist in the source
+    const sourceWords = new Set(text.toLowerCase().split(/\s+/));
+    const replyWords = reply.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter((w: string) => w.length > 2);
+    const fabricated = replyWords.filter((w: string) => !sourceWords.has(w));
+    if (fabricated.length > 2) {
+      console.warn(`[groq] REJECTED — fabricated words: ${fabricated.join(", ")}`);
+      return null;
+    }
+
+    return reply;
+  } catch {
+    return null;
+  }
+}
+
+// Fallback: keyword window extraction (no AI)
+function extractExerciseWindow(text: string): string {
   const allKeywords = [
     ...EXERCISE_KEYWORDS.cardio,
     ...EXERCISE_KEYWORDS.weights,
     ...EXERCISE_KEYWORDS.sport,
   ];
-  // Split into sentences
-  const sentences = text.split(/[.!?\n]+/).map((s) => s.trim()).filter(Boolean);
-  const matched = sentences.filter((s) =>
-    allKeywords.some((r) => r.test(s)) && !NEGATIVE_PATTERNS.some((r) => r.test(s))
-  );
-  if (matched.length === 0) return text.slice(0, 80);
-  const result = matched.join(". ");
-  return result.length > 120 ? result.slice(0, 117) + "..." : result;
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    const chunk = words.slice(Math.max(0, i - 2), i + 8).join(" ");
+    if (allKeywords.some((r) => r.test(chunk))) {
+      return chunk.length > 80 ? chunk.slice(0, 77) + "..." : chunk;
+    }
+  }
+  return text.slice(0, 60);
 }
 
-export function generateHealthLog(
+// Extract exercise part: try Groq first, fall back to keyword window
+async function extractExercisePart(text: string): Promise<string> {
+  const groqResult = await askGroq(text);
+  if (groqResult) return groqResult;
+  return extractExerciseWindow(text);
+}
+
+export async function generateHealthLog(
   thisWeekEntries: Entry[],
   lastWeekEntries: Entry[]
-): AIHealthLog | null {
+): Promise<AIHealthLog | null> {
   // Filter to last 5 days, exclude imported
   const fiveDaysAgo = new Date();
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
@@ -478,7 +544,7 @@ export function generateHealthLog(
       dayOrder.push(dateKey);
     }
     // Extract only the exercise-relevant part, not the full journal entry
-    const text = extractExercisePart(e.content);
+    const text = await extractExercisePart(e.content);
     dayGroups[dateKey].push(text);
   }
 
