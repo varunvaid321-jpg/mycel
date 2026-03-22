@@ -16,8 +16,8 @@ const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
 export async function GET() {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const entries = await prisma.entry.findMany({
     where: {
@@ -27,10 +27,10 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  // Last week's entries for workout trend comparison
-  const lastWeekEntries = await prisma.entry.findMany({
+  // Last 30 days of entries for workout log context
+  const monthEntries = await prisma.entry.findMany({
     where: {
-      createdAt: { gte: twoWeeksAgo, lt: weekAgo },
+      createdAt: { gte: thirtyDaysAgo },
       archived: false,
     },
   });
@@ -63,7 +63,8 @@ export async function GET() {
   }
 
   // Health log: code-based, no AI (keyword matching + trend comparison)
-  const healthLog = await generateHealthLog(entries, lastWeekEntries);
+  // Health log: Groq reads all 30 days for context, reports last 7 days
+  const healthLog = await generateHealthLog(entries, monthEntries);
 
   // Fallback rule-based data (always computed — cheap)
   const reminders = entries

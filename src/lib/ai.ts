@@ -396,62 +396,28 @@ Return JSON:
 
 // ── Workout Log (100% code — no AI, no hallucination) ────────
 
-const EXERCISE_KEYWORDS = {
-  cardio: [/\bwalk(ed|ing|s)?\b/i, /\brun(ning|s|n)?\b/i, /\bjog(ging|ged)?\b/i, /\bcycl(e|ing|ed)\b/i, /\bswi(m|mming|am)\b/i, /\bcardio\b/i, /\bsteps\b/i, /\bhik(e|ing|ed)\b/i, /\bskipping\s+rope\b/i, /\bjump(ed|ing)?\s+rope\b/i, /\bsprints?\b/i, /\bstair(s|case)?\b/i],
-  weights: [/\bgym\b/i, /\bweights?\b/i, /\bpush[-\s]?ups?\b/i, /\bsquats?\b/i, /\bdeadlift/i, /\bbench\s*(press)?\b/i, /\blift(ing|ed)?\b/i, /\bdumbbell/i, /\bexercis(e|ed|ing)\b/i, /\bworkout\b/i, /\bwork(ed|ing)?\s+out\b/i, /\bplanks?\b/i, /\bcrunches?\b/i, /\bsit[-\s]?ups?\b/i, /\bburpees?\b/i, /\bkettlebell/i, /\bresistance\b/i, /\breps?\b/i, /\bsets?\s+of\b/i],
-  sport: [/\bcricket\b/i, /\bbadminton\b/i, /\btennis\b/i, /\btable\s+tennis\b/i, /\bbasketball\b/i, /\bfootball\b/i, /\bsoccer\b/i, /\bplay(ed|ing)\b/i, /\byoga\b/i, /\bstretch(ing|ed)?\b/i, /\bmeditat(e|ed|ing|ion)\b/i, /\bpranayam\b/i, /\bbreathing\s+exercis/i, /\bpilates\b/i, /\bboxing\b/i, /\bmartial\s+arts?\b/i, /\bvolleyball\b/i, /\bgolf(ed|ing)?\b/i, /\bskat(e|ed|ing)\b/i, /\bdanc(e|ed|ing)\b/i, /\btai\s+chi\b/i, /\bmindfulness\b/i, /\bmental\s+workout\b/i, /\bbrain\s+training\b/i],
-};
+// ── Workout Log via Groq (one call, reads all entries, no hallucination) ──
 
-const NEGATIVE_PATTERNS = [
-  // Didn't do it
-  /\b(did\s+not|didn'?t|couldn'?t|can'?t|won'?t|not\s+able)\b.*\b(exercise|workout|work\s+out|play|gym|run|walk|swim|motivat)/i,
-  /\bskipped?\b.*\b(exercise|workout|work\s+out|gym)/i,
-  /\bwanted?\s+to\s+but\b/i,
-  /\bno\s+(workout|exercise|gym)\b/i,
-  /\brest\s+day\b/i,
-  /\bdon'?t\s+feel\s+motivat/i,
-  /\bunable\s+to\s+(get|exercise|work|move)/i,
-  /\bletharg/i,
-  // Intention / planning, not completed
-  /\b(need|going|plan(ning)?|want|hope|try(ing)?|must|have)\s+to\s+(do|start|go|hit|get|begin)\b.*\b(push[-\s]?ups?|gym|workout|work\s+out|exercise|run|walk|swim|yoga)/i,
-  /\bshould\s+(go|do|start|hit|try|get)\b.*\b(push[-\s]?ups?|gym|workout|work\s+out|exercise|run|walk|swim|yoga)/i,
-  /\bwant\s+to\s+(start|work|exercise|gym)\b/i,
-  /\bget\s+started\s+for\s+the\s+day\b/i,
-  // About other people
-  /\b(ensure|make\s+sure|tell|ask|want)\b.*\b(kyna|krish|puja|kids?|daughter|son|wife)\b.*\b(swim|soccer|volleyball|exercise|active|sport)/i,
-];
-
-function detectExerciseType(text: string): { cardio: boolean; weights: boolean; sport: boolean } {
-  return {
-    cardio: EXERCISE_KEYWORDS.cardio.some((r) => r.test(text)),
-    weights: EXERCISE_KEYWORDS.weights.some((r) => r.test(text)),
-    sport: EXERCISE_KEYWORDS.sport.some((r) => r.test(text)),
-  };
-}
-
-// Patterns that indicate talking about SOMEONE ELSE's exercise, not yours
-const THIRD_PERSON_EXERCISE = [
-  /\b(kyna|krish|puja|daughter|son|wife|kids?|she|her|he|his|them|they)\b.{0,30}\b(dance|swim|soccer|volleyball|walk|exercise|sport|active|gym|yoga)/i,
-  /\b(ask|told|tell|want|ensure|make\s+sure)\b.{0,30}\b(walk|swim|exercise|sport|active|dance|yoga)/i,
-  /\b(select|pick|buy|choose)\b.{0,20}\b(swim|sport|dance|gym)/i,
-];
-
-function isExerciseEntry(text: string): boolean {
-  // Check negative context first
-  if (NEGATIVE_PATTERNS.some((r) => r.test(text))) return false;
-  // Check if talking about someone else's exercise
-  if (THIRD_PERSON_EXERCISE.some((r) => r.test(text))) return false;
-  // Check if any exercise keyword matches
-  const types = detectExerciseType(text);
-  return types.cardio || types.weights || types.sport;
-}
-
-// ── Groq API (free tier — 14,400 req/day, separate from Cloudflare) ──
-// Used ONLY for workout log extraction — keeps Cloudflare quota for weekly/monthly/guide
-
-async function askGroq(text: string): Promise<string | null> {
+export async function generateHealthLog(
+  thisWeekEntries: Entry[],
+  lastWeekEntries: Entry[]
+): Promise<AIHealthLog | null> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
+
+  // Use ALL entries from last 30 days for context, exclude imported
+  const allEntries = [...thisWeekEntries, ...lastWeekEntries].filter(
+    (e) => !e.tags?.includes("imported")
+  );
+  if (allEntries.length === 0) return null;
+
+  // Format entries with dates
+  const formatted = allEntries
+    .map((e) => {
+      const dow = dayOfWeek(e.localDate);
+      return `[${dow ? dow + " " : ""}${e.localDate}] ${e.content}`;
+    })
+    .join("\n");
 
   try {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -463,137 +429,54 @@ async function askGroq(text: string): Promise<string | null> {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "Extract ONLY the physical activity from this journal entry. Use the person's exact words. Max 15 words. If no exercise happened, return NONE. Never add details not in the text." },
-          { role: "user", content: text },
+          {
+            role: "system",
+            content: `You read personal journal entries and report ONLY on physical activity — gym, exercise, sports, walks, push-ups, yoga, meditation, cricket, swimming, etc.
+
+STRICT RULES:
+- Only report activities the person ACTUALLY DID. Never report intentions ("want to", "need to", "should", "planning to").
+- Only report the PERSON'S OWN activity. If they mention someone else exercising (kids swimming, wife at dance), skip it.
+- Use the person's own words. Never add exercises or details they didn't mention.
+- Each day: max 12 words summarizing what they did.
+- Skip days with no physical activity entirely.
+- If ZERO physical activity in all entries, return {"days":[],"summary":""}
+- The summary: one sentence — count of active days this week, what types they did, and a short motivating suggestion for next week based on what's missing (e.g. more cardio, try a sport, add weights). Speak directly using "you".
+- Use EXACT dates from the entries. Never guess dates.`
+          },
+          {
+            role: "user",
+            content: `Here are my journal entries from the last month. Tell me what I did workout-wise, day by day for the last 7 days only. Use the full month for context on what I like and what I should do more of.\n\n${formatted}`
+          },
         ],
-        max_tokens: 50,
+        max_tokens: 500,
         temperature: 0,
       }),
     });
 
     if (res.status === 429) {
-      console.warn("[groq] RATE LIMITED — skipping");
+      console.warn("[groq:health] RATE LIMITED");
       return null;
     }
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[groq:health] FAIL ${res.status}`);
+      return null;
+    }
 
     const data = await res.json();
     const reply = data?.choices?.[0]?.message?.content?.trim();
-    if (!reply || reply === "NONE" || reply.length < 3) return null;
+    if (!reply) return null;
 
-    // Validate: every significant word in the reply must exist in the source
-    const sourceWords = new Set(text.toLowerCase().split(/\s+/));
-    const replyWords = reply.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter((w: string) => w.length > 2);
-    const fabricated = replyWords.filter((w: string) => !sourceWords.has(w));
-    if (fabricated.length > 2) {
-      console.warn(`[groq] REJECTED — fabricated words: ${fabricated.join(", ")}`);
-      return null;
-    }
+    const parsed = parseJSON<AIHealthLog>(reply, "groq-health");
+    if (!parsed || !parsed.days) return null;
 
-    return reply;
-  } catch {
+    // Filter out empty days
+    parsed.days = parsed.days.filter((d) => d.summary && d.summary.length > 2);
+    if (parsed.days.length === 0 && !parsed.summary) return null;
+
+    console.log(`[groq:health] OK — ${parsed.days.length} active days`);
+    return parsed;
+  } catch (err) {
+    console.error("[groq:health] ERROR:", err instanceof Error ? err.message : err);
     return null;
   }
-}
-
-// Fallback: keyword window extraction (no AI)
-function extractExerciseWindow(text: string): string {
-  const allKeywords = [
-    ...EXERCISE_KEYWORDS.cardio,
-    ...EXERCISE_KEYWORDS.weights,
-    ...EXERCISE_KEYWORDS.sport,
-  ];
-  const words = text.split(/\s+/);
-  for (let i = 0; i < words.length; i++) {
-    const chunk = words.slice(Math.max(0, i - 2), i + 8).join(" ");
-    if (allKeywords.some((r) => r.test(chunk))) {
-      return chunk.length > 80 ? chunk.slice(0, 77) + "..." : chunk;
-    }
-  }
-  return text.slice(0, 60);
-}
-
-// Extract exercise part: try Groq first, fall back to keyword window
-async function extractExercisePart(text: string): Promise<string> {
-  const groqResult = await askGroq(text);
-  if (groqResult) return groqResult;
-  return extractExerciseWindow(text);
-}
-
-export async function generateHealthLog(
-  thisWeekEntries: Entry[],
-  lastWeekEntries: Entry[]
-): Promise<AIHealthLog | null> {
-  // Filter to last 5 days, exclude imported
-  const fiveDaysAgo = new Date();
-  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-  const recent = thisWeekEntries.filter(
-    (e) => new Date(e.createdAt) >= fiveDaysAgo && !e.tags?.includes("imported")
-  );
-
-  // Find exercise entries and group by day
-  const dayGroups: Record<string, string[]> = {};
-  const dayOrder: string[] = [];
-  const allTypes = { cardio: false, weights: false, sport: false };
-
-  for (const e of recent) {
-    if (!isExerciseEntry(e.content)) continue;
-    const types = detectExerciseType(e.content);
-    if (types.cardio) allTypes.cardio = true;
-    if (types.weights) allTypes.weights = true;
-    if (types.sport) allTypes.sport = true;
-
-    const dow = dayOfWeek(e.localDate);
-    const dateKey = `${dow ? dow + " " : ""}${e.localDate}`.trim();
-    if (!dayGroups[dateKey]) {
-      dayGroups[dateKey] = [];
-      dayOrder.push(dateKey);
-    }
-    // Extract only the exercise-relevant part, not the full journal entry
-    const text = await extractExercisePart(e.content);
-    dayGroups[dateKey].push(text);
-  }
-
-  if (dayOrder.length === 0) return null;
-
-  // Build day entries (raw text, combined per day)
-  const days: HealthDayLog[] = dayOrder.map((dateKey) => ({
-    date: dateKey,
-    summary: dayGroups[dateKey].join(". ").replace(/\.\./g, "."),
-  }));
-
-  // Count this week vs last week workout days
-  const thisWeekDays = dayOrder.length;
-  const lastWeekExerciseDays = new Set<string>();
-  for (const e of lastWeekEntries) {
-    if (!e.tags?.includes("imported") && isExerciseEntry(e.content)) {
-      lastWeekExerciseDays.add(e.localDate);
-    }
-  }
-  const lastWeekDays = lastWeekExerciseDays.size;
-
-  // Build summary: count + trend + type nudge
-  let trend = "";
-  if (lastWeekDays === 0) {
-    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week.`;
-  } else if (thisWeekDays > lastWeekDays) {
-    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, up from ${lastWeekDays} last week.`;
-  } else if (thisWeekDays === lastWeekDays) {
-    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, same as last week.`;
-  } else {
-    trend = `${thisWeekDays} workout${thisWeekDays > 1 ? "s" : ""} this week, down from ${lastWeekDays} last week.`;
-  }
-
-  // Type nudge
-  const typeCount = [allTypes.cardio, allTypes.weights, allTypes.sport].filter(Boolean).length;
-  let nudge = "";
-  if (typeCount === 1) {
-    if (allTypes.cardio) nudge = " Try adding weights or a sport next week.";
-    else if (allTypes.weights) nudge = " Mix in cardio or a sport next week?";
-    else if (allTypes.sport) nudge = " Add some weights or cardio to complement.";
-  } else if (typeCount >= 2) {
-    nudge = " Good mix — keep it going.";
-  }
-
-  return { days, summary: trend + nudge };
 }
