@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   }
 
   if (searchTerm) {
-    // Fetch more entries and filter in-memory for case-insensitive search
+    // Fetch entries with category/topic filters applied, then search in-memory
     const allEntries = await prisma.entry.findMany({
       where,
       orderBy: { createdAt: "desc" },

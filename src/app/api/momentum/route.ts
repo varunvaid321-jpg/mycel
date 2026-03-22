@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { TOPICS, type Topic } from "@/lib/classifier";
+import { TIMEZONE } from "@/lib/design-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +19,12 @@ export async function GET() {
 
   const topicKeys = Object.keys(TOPICS) as Topic[];
 
-  // Build 30-day grid: for each day, count entries per topic
+  // Build 30-day grid using Toronto timezone (matches localDate in entries)
   const days: { date: string; topics: Record<string, number> }[] = [];
 
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = d.toLocaleDateString("en-CA", { timeZone: TIMEZONE }); // YYYY-MM-DD in Toronto
     const topicCounts: Record<string, number> = {};
     for (const t of topicKeys) {
       topicCounts[t] = 0;
@@ -32,7 +33,8 @@ export async function GET() {
   }
 
   for (const entry of entries) {
-    const dateStr = entry.createdAt.toISOString().slice(0, 10);
+    // Use Toronto timezone for matching, not UTC
+    const dateStr = entry.createdAt.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
     const day = days.find((d) => d.date === dateStr);
     if (!day) continue;
 

@@ -31,14 +31,16 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  // Category breakdown
+  // Filter out imported entries — used for AI analysis AND counts
+  const organicEntries = entries.filter(
+    (e) => !e.tags?.toLowerCase().includes("imported") && !e.tags?.toLowerCase().includes("chatgpt")
+  );
+
+  // Category breakdown (organic only — imported entries are reference data, not your thoughts)
   const breakdown: Record<string, number> = {};
-  for (const e of entries) {
+  for (const e of organicEntries) {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
-
-  // Filter out imported entries for AI analysis
-  const organicEntries = entries.filter((e) => !e.tags?.includes("imported"));
 
   // AI brief: use cache if entry count + latest update unchanged and not too stale
   const now = Date.now();
@@ -136,7 +138,7 @@ export async function GET() {
   const topCategory = Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0];
 
   return NextResponse.json({
-    totalEntries: entries.length,
+    totalEntries: organicEntries.length,
     breakdown,
     themes,
     reminders,

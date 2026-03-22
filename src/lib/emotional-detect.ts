@@ -37,7 +37,7 @@ const PATTERNS: {
       /\b(worried|worrying|dread|dreading)\b/i,
       /\b(nervous\s+about|scared\s+of|afraid\s+of|freaking\s+out)\b/i,
       /\b(can't\s+breathe|heart\s+racing|shaking|trembling)\b/i,
-      /\b(meeting|presentation|interview|confrontation)\b/i,
+      /\b(presentation|interview|confrontation)\b/i,
     ],
     guidances: [
       "Ground yourself: 5 things you see, 4 you hear, 3 you touch. You're safe right now.",
@@ -101,7 +101,7 @@ export function detectEmotion(text: string): EmotionalState {
 
   for (const pattern of PATTERNS) {
     const matchCount = pattern.words.filter((w) => w.test(text)).length;
-    if (matchCount >= 1) {
+    if (matchCount >= 2) {
       // Pick a random guidance
       const guidance =
         pattern.guidances[Math.floor(Math.random() * pattern.guidances.length)];

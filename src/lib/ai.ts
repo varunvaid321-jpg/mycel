@@ -170,7 +170,7 @@ async function askOnce(prompt: string, caller: string): Promise<string | null> {
           { role: "system", content: SYSTEM_CONTEXT },
           { role: "user", content: prompt },
         ],
-        max_tokens: 1500,
+        max_tokens: 2500,
       }),
     }
   );
@@ -392,7 +392,7 @@ Rules: Address them directly as "you". If recurring theme without resolution, na
   if (!result) return null;
   const parsed = parseJSON<GuideResponse>(result, "guide");
   if (!parsed) return null;
-  return validateAIOutput(parsed, entries.map((e) => e.content), "guide", 0.25);
+  return validateAIOutput(parsed, entries.map((e) => e.content), "guide", 0.35);
 }
 
 // ── Auto-correct ─────────────────────────────────────────────
@@ -405,7 +405,25 @@ export async function autoCorrect(rawText: string): Promise<string> {
     `Fix spelling, grammar, and typos. Keep original meaning and tone. Return ONLY the corrected text, nothing else.\n\nText: ${rawText}`,
     "autocorrect"
   );
-  return result?.trim() || rawText;
+
+  if (!result) return rawText;
+
+  let corrected = result.trim();
+
+  // Strip markdown/JSON wrappers the AI sometimes adds
+  if (corrected.startsWith("```")) corrected = corrected.replace(/^```\w*\n?/, "").replace(/```$/, "").trim();
+  if (corrected.startsWith("{") && corrected.endsWith("}")) {
+    try { corrected = JSON.parse(corrected).corrected || JSON.parse(corrected).text || rawText; } catch { /* use as-is */ }
+  }
+  if (corrected.startsWith('"') && corrected.endsWith('"')) corrected = corrected.slice(1, -1);
+
+  // Reject if AI drastically changed length (> 2x or < 0.3x) — likely hallucination
+  if (corrected.length > rawText.length * 2 || corrected.length < rawText.length * 0.3) {
+    console.warn(`[AI:autocorrect] REJECTED — length changed from ${rawText.length} to ${corrected.length}`);
+    return rawText;
+  }
+
+  return corrected;
 }
 
 // ── Weekly Brief ─────────────────────────────────────────────

@@ -26,10 +26,17 @@ export async function POST(request: Request) {
       continue;
     }
 
-    // Check for duplicates
-    const existing = await prisma.entry.findFirst({
-      where: { content: text },
+    // Check for duplicates (case-insensitive, whitespace-normalized)
+    const normalizedText = text.toLowerCase().replace(/\s+/g, " ").trim();
+    const recentEntries = await prisma.entry.findMany({
+      where: { archived: false },
+      select: { content: true },
+      take: 500,
+      orderBy: { createdAt: "desc" },
     });
+    const existing = recentEntries.find(
+      (e) => e.content.toLowerCase().replace(/\s+/g, " ").trim() === normalizedText
+    );
     if (existing) {
       skipped.push(text.slice(0, 50) + " (duplicate)");
       continue;

@@ -21,8 +21,13 @@ export async function GET() {
     return NextResponse.json({ totalEntries: 0 });
   }
 
-  // Try AI review
-  const aiReview = await generateMonthlyReview(entries);
+  // Filter out imported/chatgpt entries for AI analysis
+  const organicEntries = entries.filter(
+    (e) => !e.tags?.toLowerCase().includes("imported") && !e.tags?.toLowerCase().includes("chatgpt")
+  );
+
+  // Try AI review (organic entries only)
+  const aiReview = organicEntries.length > 0 ? await generateMonthlyReview(organicEntries) : null;
 
   // Fallback stats
   const topicCounts: Record<string, number> = {};
