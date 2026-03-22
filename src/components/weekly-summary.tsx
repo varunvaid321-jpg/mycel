@@ -27,7 +27,8 @@ interface HealthDayLog {
 
 interface HealthLog {
   days: HealthDayLog[];
-  momentum: string;
+  insight: string;
+  motivation: string;
 }
 
 interface WeeklyData {
@@ -157,9 +158,14 @@ export default function WeeklySummary() {
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.momentum && (
-                    <p className="mt-3 text-sm text-spore/90 italic">
-                      {data.healthLog.momentum}
+                  {data.healthLog.insight && (
+                    <p className="mt-3 text-sm text-text-muted">
+                      {data.healthLog.insight}
+                    </p>
+                  )}
+                  {data.healthLog.motivation && (
+                    <p className="mt-2 text-sm text-spore/90 italic">
+                      {data.healthLog.motivation}
                     </p>
                   )}
                 </div>
@@ -228,9 +234,14 @@ export default function WeeklySummary() {
                       </li>
                     ))}
                   </ul>
-                  {data.healthLog.momentum && (
-                    <p className="mt-3 text-sm text-spore/90 italic">
-                      {data.healthLog.momentum}
+                  {data.healthLog.insight && (
+                    <p className="mt-3 text-sm text-text-muted">
+                      {data.healthLog.insight}
+                    </p>
+                  )}
+                  {data.healthLog.motivation && (
+                    <p className="mt-2 text-sm text-spore/90 italic">
+                      {data.healthLog.motivation}
                     </p>
                   )}
                 </div>

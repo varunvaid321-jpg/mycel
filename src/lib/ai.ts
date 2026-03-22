@@ -109,7 +109,8 @@ export interface HealthDayLog {
 
 export interface AIHealthLog {
   days: HealthDayLog[];
-  momentum: string;
+  insight: string;
+  motivation: string;
 }
 
 export interface AIMonthlyReview {
@@ -384,25 +385,29 @@ export async function generateHealthLog(
 ): Promise<AIHealthLog | null> {
   if (entries.length === 0) return null;
 
-  const formatted = formatEntries(entries);
+  // Only look at last 5 days of entries
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const recent = entries.filter((e) => new Date(e.createdAt) >= fiveDaysAgo);
+  if (recent.length === 0) return null;
+
+  const formatted = formatEntries(recent);
 
   const result = await ask(
-    `Read ALL of these journal entries carefully. Extract EVERY mention of exercise, workout, running, walking, gym, swimming, yoga, cycling, stretching, sports, steps, physical activity, diet, fasting, weight, sleep, hydration, or any health-related action the person DID.
+    `Read ALL of these journal entries from the last 5 days. Extract EVERY mention of exercise, workout, running, walking, gym, swimming, yoga, cycling, stretching, sports, steps, physical activity, diet, fasting, weight, sleep, hydration, or any health-related action the person DID.
 
-IMPORTANT RULES:
-- Include EVERY day where they did something health-related, no matter how small (a walk, choosing a healthy meal, skipping alcohol, sleeping well)
-- If a day has no health mention, skip that day entirely — do NOT include it
-- Be motivational and celebratory. Highlight what they DID, not what they missed
-- Never coach, suggest, or tell them what to do. Just reflect their wins back to them
+RULES:
+- Only include days where they actually did something health-related. If a day has no health mention, do NOT include that day at all.
+- Keep each day summary to 1 short sentence about what they did physically
 - Use "you" — speak directly to them
-- Keep each day summary to 1 short sentence
-- The "momentum" field should be a single warm, encouraging sentence about their overall health pattern this week — celebrate consistency or effort, never criticize gaps
+- The "insight" field: one practical observation based on their pattern. Examples: "You tend to work out in the mornings — that's your high-energy window", "Heavy on cardio this week, might be a good time to mix in some weights", "You're consistent with walks after dinner — that's becoming a habit". Make it specific to THEIR data, not generic advice.
+- The "motivation" field: exactly ONE warm sentence celebrating their effort. Not preachy. Not coaching. Just recognition.
 
 Entries:
 ${formatted}
 
 Return JSON:
-{"days": [{"date": "Mon Mar 17", "summary": "short sentence about what you did"}], "momentum": "one encouraging sentence about your health week"}`,
+{"days": [{"date": "Mon Mar 17", "summary": "what you did"}], "insight": "one pattern observation", "motivation": "one encouraging line"}`,
     "health-log"
   );
 
