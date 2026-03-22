@@ -146,7 +146,7 @@ export default function WeeklySummary() {
               {data.healthLog && data.healthLog.days.length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Your Health This Week
+                    Workout Log
                   </h3>
                   <ul className="space-y-1.5">
                     {data.healthLog.days.map((day, i) => (
@@ -222,7 +222,7 @@ export default function WeeklySummary() {
               {data.healthLog && data.healthLog.days.length > 0 && (
                 <div className="pt-3 border-t border-border">
                   <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
-                    Your Health This Week
+                    Workout Log
                   </h3>
                   <ul className="space-y-1.5">
                     {data.healthLog.days.map((day, i) => (
