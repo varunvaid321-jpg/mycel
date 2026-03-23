@@ -1,22 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES, type Category } from "@/lib/categories";
-import { generateWeeklyBrief, type AIWeeklyBrief } from "@/lib/ai";
+import { generateWeeklyBrief, generateHealthLog, type AIWeeklyBrief, type AIHealthLog } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
-// Server-side cache for AI brief (5-min TTL, invalidates on entry count change)
+// Server-side cache: avoid re-calling AI on every request.
+// Stores the last AI brief + the entry count it was based on.
+// Re-generates only when entry count changes (new entry planted).
 let cachedBrief: AIWeeklyBrief | null = null;
 let cachedEntryCount = -1;
 let cachedAt = 0;
-const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes max staleness
+
+let cachedHealthLog: AIHealthLog | null = null;
+let cachedHealthCount = -1;
+let cachedHealthAt = 0;
 
 export async function GET() {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
 
   const entries = await prisma.entry.findMany({
-    where: { createdAt: { gte: weekAgo }, archived: false },
+    where: {
+      createdAt: { gte: weekAgo },
+      archived: false,
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -26,14 +35,19 @@ export async function GET() {
     breakdown[e.category] = (breakdown[e.category] || 0) + 1;
   }
 
-  // AI brief (Cloudflare) — cached
+  // AI brief: use cache if entry count unchanged and not too stale
   const now = Date.now();
-  const cacheValid = cachedBrief && cachedEntryCount === entries.length && now - cachedAt < CACHE_MAX_AGE_MS;
+  const cacheValid =
+    cachedBrief &&
+    cachedEntryCount === entries.length &&
+    now - cachedAt < CACHE_MAX_AGE_MS;
 
   let aiBrief: AIWeeklyBrief | null;
   if (cacheValid) {
     aiBrief = cachedBrief;
+    console.log(`[weekly] cache HIT — ${entries.length} entries, age ${Math.round((now - cachedAt) / 1000)}s`);
   } else {
+    console.log(`[weekly] cache MISS — entries: ${entries.length} (was ${cachedEntryCount}), age: ${cachedAt ? Math.round((now - cachedAt) / 1000) + "s" : "never"}`);
     aiBrief = await generateWeeklyBrief(entries);
     if (aiBrief) {
       cachedBrief = aiBrief;
@@ -42,10 +56,39 @@ export async function GET() {
     }
   }
 
-  // Fallback rule-based data
-  const reminders = entries.filter((e) => e.category === "signal").slice(0, 5).map((e) => e.content);
-  const actions = entries.filter((e) => e.category === "fruit").slice(0, 5).map((e) => e.content);
-  const letting_go = entries.filter((e) => e.category === "decompose").slice(0, 3).map((e) => e.content);
+  // Health log: separate cache, same invalidation logic
+  const healthCacheValid =
+    cachedHealthLog &&
+    cachedHealthCount === entries.length &&
+    now - cachedHealthAt < CACHE_MAX_AGE_MS;
+
+  let healthLog: AIHealthLog | null;
+  if (healthCacheValid) {
+    healthLog = cachedHealthLog;
+  } else {
+    healthLog = await generateHealthLog(entries);
+    if (healthLog) {
+      cachedHealthLog = healthLog;
+      cachedHealthCount = entries.length;
+      cachedHealthAt = now;
+    }
+  }
+
+  // Fallback rule-based data (always computed — cheap)
+  const reminders = entries
+    .filter((e) => e.category === "signal")
+    .slice(0, 5)
+    .map((e) => e.content);
+
+  const actions = entries
+    .filter((e) => e.category === "fruit")
+    .slice(0, 5)
+    .map((e) => e.content);
+
+  const letting_go = entries
+    .filter((e) => e.category === "decompose")
+    .slice(0, 3)
+    .map((e) => e.content);
 
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
@@ -73,7 +116,11 @@ export async function GET() {
     }
   }
 
-  const themes = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([word, count]) => ({ word, count }));
+  const themes = Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([word, count]) => ({ word, count }));
+
   const topCategory = Object.entries(breakdown).sort((a, b) => b[1] - a[1])[0];
 
   return NextResponse.json({
@@ -84,8 +131,13 @@ export async function GET() {
     actions,
     letting_go,
     topCategory: topCategory
-      ? { key: topCategory[0], label: CATEGORIES[topCategory[0] as Category]?.label || topCategory[0], count: topCategory[1] }
+      ? {
+          key: topCategory[0],
+          label: CATEGORIES[topCategory[0] as Category]?.label || topCategory[0],
+          count: topCategory[1],
+        }
       : null,
     aiBrief,
+    healthLog,
   });
 }

@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { verifyPassphrase } from "@/lib/auth";
 import crypto from "crypto";
 
-export const dynamic = "force-dynamic";
-
 // ── Config ───────────────────────────────────────────────────
 const ALLOWED_COUNTRIES = ["CA", "US"];
 const SECRET_ANSWER_GEO = "hannover";
