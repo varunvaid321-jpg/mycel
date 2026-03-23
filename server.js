@@ -19,11 +19,25 @@ try {
   console.error("prisma db push warning:", e.message);
 }
 
+// Bind port IMMEDIATELY so Render's port scan succeeds.
+// Requests queue until app.prepare() finishes.
+let ready = false;
+
+const server = createServer((req, res) => {
+  if (!ready) {
+    res.writeHead(503, { "Retry-After": "5" });
+    res.end("Starting up...");
+    return;
+  }
+  const parsedUrl = parse(req.url, true);
+  handle(req, res, parsedUrl);
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Port ${PORT} bound — waiting for Next.js...`);
+});
+
 app.prepare().then(() => {
-  createServer((req, res) => {
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
-  }).listen(PORT, "0.0.0.0", () => {
-    console.log(`Mycel running on port ${PORT}`);
-  });
+  ready = true;
+  console.log(`Mycel running on port ${PORT}`);
 });
