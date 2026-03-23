@@ -104,6 +104,16 @@ export interface AIWeeklyBrief {
   prioritizedActions: string[];
 }
 
+export interface HealthDayLog {
+  date: string;
+  summary: string;
+}
+
+export interface AIHealthLog {
+  days: HealthDayLog[];
+  insight: string;
+  motivation: string;
+}
 
 export interface AIMonthlyReview {
   topFocusAreas: { topic: string; count: number }[];
@@ -171,8 +181,6 @@ async function askOnce(prompt: string, caller: string): Promise<string | null> {
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     console.error(`[AI:${caller}] FAIL ${res.status} (${elapsed}ms) — ${errText.slice(0, 200)}`);
-    // 429 = rate limited (daily quota exhausted) — don't retry, it won't help
-    if (res.status === 429) throw new Error("RATE_LIMITED");
     return null;
   }
 
@@ -197,12 +205,7 @@ async function ask(prompt: string, caller: string): Promise<string | null> {
         console.warn(`[AI:${caller}] retry ${attempt}/${MAX_RETRIES}...`);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg === "RATE_LIMITED") {
-        console.warn(`[AI:${caller}] RATE LIMITED — daily quota exhausted, skipping retries`);
-        return null;
-      }
-      console.error(`[AI:${caller}] ERROR attempt ${attempt}/${MAX_RETRIES} —`, msg);
+      console.error(`[AI:${caller}] ERROR attempt ${attempt}/${MAX_RETRIES} —`, err instanceof Error ? err.message : err);
       if (attempt >= MAX_RETRIES) return null;
     }
   }
@@ -381,4 +384,47 @@ Return JSON:
 
   if (!result) return null;
   return parseJSON<AIMonthlyReview>(result, "monthly");
+}
+
+// ── Health Log ──────────────────────────────────────────────
+
+export async function generateHealthLog(
+  entries: Entry[]
+): Promise<AIHealthLog | null> {
+  if (entries.length === 0) return null;
+
+  // Only last 5 days, exclude imported entries
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const recent = entries.filter(
+    (e) => new Date(e.createdAt) >= fiveDaysAgo && !e.tags?.includes("imported")
+  );
+  if (recent.length === 0) return null;
+
+  const formatted = formatEntries(recent);
+
+  const result = await ask(
+    `Read these journal entries. Find ONLY mentions of gym, workout, exercise, running, walking, swimming, cycling, weights, stretching, or sports. Nothing else — no sleep, no diet, no hydration, no fasting, no mental health.
+
+RULES:
+- Only include days where they actually exercised or worked out. No exercise that day = skip it entirely.
+- Each day: one short blunt PAST TENSE sentence. Example: "Gym — chest and triceps" or "30 min walk after work" or "5K run, new PR"
+- This is a weekly review read AFTER the fact. Write everything in past tense as a log. Never present tense like "you're walking home". It's a summary, not live commentary.
+- If NO entries mention any exercise at all, return {"days": [], "insight": "", "motivation": ""}
+- The "insight" field: one blunt observation about their exercise pattern this week. Keep it factual, past tense.
+- The "motivation" field: one short line. Keep it real, not cheesy. Motivate to keep going or do more.
+- Use "you" — speak directly
+
+Entries:
+${formatted}
+
+IMPORTANT: Use the EXACT day name and date from the entries (e.g. "Sun Mar 22"). Do NOT calculate or guess day names — they are already provided.
+
+Return JSON:
+{"days": [{"date": "Sun Mar 22", "summary": "what you did"}], "insight": "one observation", "motivation": "one line"}`,
+    "health-log"
+  );
+
+  if (!result) return null;
+  return parseJSON<AIHealthLog>(result, "health-log");
 }

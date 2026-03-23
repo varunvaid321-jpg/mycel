@@ -20,6 +20,17 @@ interface AIBrief {
   prioritizedActions: string[];
 }
 
+interface HealthDayLog {
+  date: string;
+  summary: string;
+}
+
+interface HealthLog {
+  days: HealthDayLog[];
+  insight: string;
+  motivation: string;
+}
+
 interface WeeklyData {
   totalEntries: number;
   breakdown: Record<string, number>;
@@ -29,6 +40,7 @@ interface WeeklyData {
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
   aiBrief: AIBrief | null;
+  healthLog: HealthLog | null;
 }
 
 export default function WeeklySummary() {
@@ -80,6 +92,7 @@ export default function WeeklySummary() {
         <div className="space-y-4">
           {ai ? (
             <>
+              {/* AI Patterns */}
               {ai.patterns.length > 0 && (
                 <Section title="Patterns">
                   {ai.patterns.map((p, i) => (
@@ -88,6 +101,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Ripe Decisions */}
               {ai.ripeDecisions.length > 0 && (
                 <Section title="Decisions Ripening">
                   {ai.ripeDecisions.map((d, i) => (
@@ -96,6 +110,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Conversations */}
               {ai.conversationsToHave.length > 0 && (
                 <Section title="Conversations to Have">
                   {ai.conversationsToHave.map((c, i) => (
@@ -104,6 +119,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Let Go */}
               {ai.thingsToLetGo.length > 0 && (
                 <Section title="Consider Letting Go">
                   {ai.thingsToLetGo.map((l, i) => (
@@ -112,6 +128,7 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Actions */}
               {ai.prioritizedActions.length > 0 && (
                 <Section title="This Week&apos;s Actions">
                   {ai.prioritizedActions.map((a, i) => (
@@ -125,12 +142,42 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Health Log */}
+              {data.healthLog && data.healthLog.days.length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
+                    Workout Log
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {data.healthLog.days.map((day, i) => (
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                          {day.date}
+                        </span>
+                        <span className="text-text-muted">{day.summary}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {data.healthLog.insight && (
+                    <p className="mt-3 text-sm text-text-muted">
+                      {data.healthLog.insight}
+                    </p>
+                  )}
+                  {data.healthLog.motivation && (
+                    <p className="mt-2 text-sm text-spore/90 italic">
+                      {data.healthLog.motivation}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
               </p>
             </>
           ) : (
             <>
+              {/* Fallback: rule-based */}
               {data.themes.length > 0 && (
                 <div>
                   <h3 className={TEXT_SUBSECTION_HEADER}>
@@ -171,8 +218,37 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
+              {/* Health Log (also shown in fallback mode) */}
+              {data.healthLog && data.healthLog.days.length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>
+                    Workout Log
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {data.healthLog.days.map((day, i) => (
+                      <li key={i} className={`flex items-start gap-2 ${TEXT_BULLET}`}>
+                        <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-16">
+                          {day.date}
+                        </span>
+                        <span className="text-text-muted">{day.summary}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {data.healthLog.insight && (
+                    <p className="mt-3 text-sm text-text-muted">
+                      {data.healthLog.insight}
+                    </p>
+                  )}
+                  {data.healthLog.motivation && (
+                    <p className="mt-2 text-sm text-spore/90 italic">
+                      {data.healthLog.motivation}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <p className={TEXT_NOTE}>
-                weekly summary
+                rule-based summary &middot; add ANTHROPIC_API_KEY for ai brief
               </p>
             </>
           )}
@@ -196,6 +272,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function BulletItem({ icon, color, text }: { icon: string; color: string; text: string }) {
   const [expanded, setExpanded] = useState(false);
 
+  // Get first complete sentence
   const sentenceEnd = text.search(/[.!?]\s|[.!?]$/);
   const firstSentence = sentenceEnd > 0 ? text.slice(0, sentenceEnd + 1) : text;
   const hasMore = firstSentence.length < text.length;
