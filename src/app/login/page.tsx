@@ -132,7 +132,7 @@ export default function LoginPage() {
 
         {locked ? (
           /* ── Lockout recovery ── */
-          <form onSubmit={handleRecovery} className="space-y-4 text-left">
+          <form onSubmit={handleRecovery} className="space-y-4 text-left" autoComplete="off">
             <div className={ALERT_SIGNAL_STRONG}>
               <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 account locked
@@ -171,7 +171,7 @@ export default function LoginPage() {
           </form>
         ) : !challenge ? (
           /* ── Normal passphrase ── */
-          <form onSubmit={handleSubmit} className="w-full">
+          <form onSubmit={handleSubmit} className="w-full" autoComplete="off">
             {recoverySuccess && (
               <p className={`mb-4 ${TEXT_STATUS_FRUIT}`}>
                 Identity verified — enter your passphrase
@@ -184,6 +184,9 @@ export default function LoginPage() {
                 onChange={(e) => setPassphrase(e.target.value)}
                 placeholder="enter passphrase"
                 autoFocus
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
                 className={`${INPUT_PASSWORD} ${error ? "border-signal" : ""}`}
               />
               <button
@@ -197,7 +200,7 @@ export default function LoginPage() {
           </form>
         ) : (
           /* ── Geo challenge ── */
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className={ALERT_SIGNAL_STRONG}>
               <p className={`${TEXT_STATUS_SIGNAL} uppercase mb-1`}>
                 security check
