@@ -150,7 +150,7 @@ export default function ScreenLock({ children }: ScreenLockProps) {
         </h2>
         <p className="text-sm italic text-text-muted mb-8">locked</p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           <input
             ref={inputRef}
             type="password"
@@ -164,7 +164,9 @@ export default function ScreenLock({ children }: ScreenLockProps) {
               setError("");
             }}
             placeholder="PIN"
-            autoComplete="off"
+            autoComplete="new-password"
+            data-lpignore="true"
+            data-1p-ignore="true"
             disabled={lockoutSec > 0}
             className="w-full bg-surface border border-border rounded-lg px-4 py-4 text-center
               font-mono text-2xl tracking-[0.5em] text-text-primary
