@@ -20,10 +20,6 @@ interface AIBrief {
   prioritizedActions: string[];
 }
 
-// Health types imported from health module — single source of truth
-import type { HealthMonitorOutput, HealthDay } from "@/lib/health/types";
-import { MAX_LABEL_LENGTH } from "@/lib/health/types";
-
 interface WeeklyData {
   totalEntries: number;
   breakdown: Record<string, number>;
@@ -33,17 +29,14 @@ interface WeeklyData {
   letting_go: string[];
   topCategory: { key: string; label: string; count: number } | null;
   aiBrief: AIBrief | null;
-  // healthLog now fetched separately via /api/health
 }
 
 export default function WeeklySummary() {
   const [data, setData] = useState<WeeklyData | null>(null);
-  const [healthData, setHealthData] = useState<HealthMonitorOutput | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch weekly summary (fast — no health, no Groq)
     fetch("/api/weekly")
       .then((r) => r.json())
       .then((d) => {
@@ -51,14 +44,6 @@ export default function WeeklySummary() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-
-    // Fetch health separately (async, non-blocking — uses Groq)
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.healthLog) setHealthData(d.healthLog);
-      })
-      .catch(() => {}); // silent fail — health section stays hidden
   }, []);
 
   if (loading || !data || data.totalEntries === 0) return null;
@@ -95,7 +80,6 @@ export default function WeeklySummary() {
         <div className="space-y-4">
           {ai ? (
             <>
-              {/* AI Patterns */}
               {ai.patterns.length > 0 && (
                 <Section title="Patterns">
                   {ai.patterns.map((p, i) => (
@@ -104,7 +88,6 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Ripe Decisions */}
               {ai.ripeDecisions.length > 0 && (
                 <Section title="Decisions Ripening">
                   {ai.ripeDecisions.map((d, i) => (
@@ -113,7 +96,6 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Conversations */}
               {ai.conversationsToHave.length > 0 && (
                 <Section title="Conversations to Have">
                   {ai.conversationsToHave.map((c, i) => (
@@ -122,7 +104,6 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Let Go */}
               {ai.thingsToLetGo.length > 0 && (
                 <Section title="Consider Letting Go">
                   {ai.thingsToLetGo.map((l, i) => (
@@ -131,7 +112,6 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Actions */}
               {ai.prioritizedActions.length > 0 && (
                 <Section title="This Week&apos;s Actions">
                   {ai.prioritizedActions.map((a, i) => (
@@ -145,16 +125,12 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Health Log */}
-              {healthData && <HealthMonitor healthLog={healthData} />}
-
               <p className={TEXT_NOTE}>
                 ai-powered weekly brief
               </p>
             </>
           ) : (
             <>
-              {/* Fallback: rule-based */}
               {data.themes.length > 0 && (
                 <div>
                   <h3 className={TEXT_SUBSECTION_HEADER}>
@@ -195,51 +171,10 @@ export default function WeeklySummary() {
                 </Section>
               )}
 
-              {/* Health Log (also shown in fallback mode) */}
-              {healthData && <HealthMonitor healthLog={healthData} />}
-
               <p className={TEXT_NOTE}>
                 weekly summary
               </p>
             </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HealthMonitor({ healthLog }: { healthLog: HealthMonitorOutput }) {
-  const activeDays = healthLog.days?.filter((d) => d.activities?.length > 0) || [];
-  if (activeDays.length === 0) return null;
-
-  function truncLabel(label: string): string {
-    return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + "..." : label;
-  }
-
-  return (
-    <div className="pt-3 border-t border-border">
-      <h3 className={`${TEXT_SUBSECTION_HEADER} text-spore`}>Health Monitor</h3>
-      <ul className="space-y-2">
-        {activeDays.map((day, i) => (
-          <li key={i} className={`flex items-start gap-3 ${TEXT_BULLET}`}>
-            <span className="font-mono text-xs text-spore mt-0.5 shrink-0 w-24">{day.date}</span>
-            <span className="text-text-muted">
-              {day.activities.map((a) => truncLabel(a.label)).join(" · ")}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {healthLog.week_summary && (
-        <div className="mt-3 space-y-1">
-          {healthLog.week_summary.pattern_note && (
-            <p className="text-sm text-text-muted">{healthLog.week_summary.pattern_note}</p>
-          )}
-          {healthLog.week_summary.next_best_action && (
-            <p className="text-sm text-text-muted">{healthLog.week_summary.next_best_action}</p>
-          )}
-          {healthLog.week_summary.motivation && (
-            <p className="text-sm text-spore/90 italic">{healthLog.week_summary.motivation}</p>
           )}
         </div>
       )}
@@ -261,7 +196,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function BulletItem({ icon, color, text }: { icon: string; color: string; text: string }) {
   const [expanded, setExpanded] = useState(false);
 
-  // Get first complete sentence
   const sentenceEnd = text.search(/[.!?]\s|[.!?]$/);
   const firstSentence = sentenceEnd > 0 ? text.slice(0, sentenceEnd + 1) : text;
   const hasMore = firstSentence.length < text.length;
