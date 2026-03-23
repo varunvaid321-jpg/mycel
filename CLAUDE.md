@@ -62,7 +62,6 @@ npm install --include=dev && npx prisma generate && npx next build
 node server.js
 ```
 `server.js` runs `prisma db push` then starts Next.js programmatically.
-- **CRITICAL**: `package.json` `"start"` script MUST be `"node server.js"` — NEVER `"next start"`. Render uses `npm start` and expects port 10000. `next start` binds port 3000, causing port scan timeout and failed deploys. This caused a production outage on 2026-03-23.
 
 ### API routes
 - All non-static API routes MUST have `export const dynamic = "force-dynamic"`
