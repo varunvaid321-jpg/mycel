@@ -51,6 +51,13 @@ Private AI-powered personal journal at amushroom.com. Captures thoughts via typi
 
 Every PR auto-deploys via GitHub Actions. If deploy fails, fix immediately.
 
+### Deploy rules (RIGID — learned from 2026-03-23 outage)
+- **NEVER stack deploys** — wait for the current deploy to fully succeed or fail before merging another PR. Stacked deploys cancel each other and can take the site down.
+- **NEVER clear build cache** — without cache, Next.js `app.prepare()` takes longer than Render's port scan timeout on Starter plan. This caused a multi-hour outage.
+- **ONE PR → ONE deploy → verify live → next PR** — no exceptions.
+- **`server.js` must bind port BEFORE `app.prepare()`** — Render's port scan needs to detect the port immediately. The server returns 503 until Next.js is ready. NEVER move `server.listen()` inside `app.prepare().then()`.
+- **`package.json` `"start"` script MUST be `"node server.js"`** — NEVER `"next start"`. Render's startCommand is set explicitly but this is a safety net.
+
 ### Build command (Render)
 ```
 npm install --include=dev && npx prisma generate && npx next build
@@ -61,7 +68,7 @@ npm install --include=dev && npx prisma generate && npx next build
 ```
 node server.js
 ```
-`server.js` runs `prisma db push` then starts Next.js programmatically.
+`server.js` binds port 10000 immediately, runs `prisma db push`, then prepares Next.js. Port must bind before `app.prepare()` completes.
 
 ### API routes
 - All non-static API routes MUST have `export const dynamic = "force-dynamic"`
