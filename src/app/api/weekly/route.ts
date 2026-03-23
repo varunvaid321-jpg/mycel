@@ -87,6 +87,5 @@ export async function GET() {
       ? { key: topCategory[0], label: CATEGORIES[topCategory[0] as Category]?.label || topCategory[0], count: topCategory[1] }
       : null,
     aiBrief,
-    // healthLog removed — now served by /api/health (separate, non-blocking)
   });
 }

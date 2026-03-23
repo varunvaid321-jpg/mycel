@@ -104,7 +104,6 @@ export interface AIWeeklyBrief {
   prioritizedActions: string[];
 }
 
-// Health types moved to src/lib/health/types.ts
 
 export interface AIMonthlyReview {
   topFocusAreas: { topic: string; count: number }[];
@@ -383,9 +382,3 @@ Return JSON:
   if (!result) return null;
   return parseJSON<AIMonthlyReview>(result, "monthly");
 }
-
-// ── Health Log ──────────────────────────────────────────────
-
-// ── Workout Log (100% code — no AI, no hallucination) ────────
-
-// Health monitor moved to src/lib/health/ — dedicated module with extraction pipeline
