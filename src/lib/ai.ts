@@ -181,6 +181,8 @@ async function askOnce(prompt: string, caller: string): Promise<string | null> {
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     console.error(`[AI:${caller}] FAIL ${res.status} (${elapsed}ms) — ${errText.slice(0, 200)}`);
+    // 429 = daily quota exhausted — retrying won't help
+    if (res.status === 429) throw new Error("RATE_LIMITED");
     return null;
   }
 
@@ -205,7 +207,12 @@ async function ask(prompt: string, caller: string): Promise<string | null> {
         console.warn(`[AI:${caller}] retry ${attempt}/${MAX_RETRIES}...`);
       }
     } catch (err) {
-      console.error(`[AI:${caller}] ERROR attempt ${attempt}/${MAX_RETRIES} —`, err instanceof Error ? err.message : err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === "RATE_LIMITED") {
+        console.warn(`[AI:${caller}] RATE LIMITED — daily quota exhausted, skipping retries`);
+        return null;
+      }
+      console.error(`[AI:${caller}] ERROR attempt ${attempt}/${MAX_RETRIES} —`, msg);
       if (attempt >= MAX_RETRIES) return null;
     }
   }

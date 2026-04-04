@@ -93,16 +93,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "content or image required" }, { status: 400 });
   }
 
-  // Auto-correct typos and bad grammar (only if there's text)
-  const corrected = content.trim() ? await autoCorrect(content.trim()) : "";
-
-  // Auto-classify (on corrected text for better accuracy)
-  const { category, topics } = corrected ? classify(corrected) : { category: "spore", topics: [] as string[] };
+  const trimmed = content.trim();
   const hasImages = imageFiles.length > 0;
+
+  // Classify on original text (local, instant — no AI)
+  const { category, topics } = trimmed ? classify(trimmed) : { category: "spore", topics: [] as string[] };
 
   // Auto-link: if fruit, find related recent spores/signals by keyword overlap
   let linkedEntryIds = "";
-  if (category === "fruit" && corrected) {
+  if (category === "fruit" && trimmed) {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 14);
     const recent = await prisma.entry.findMany({
@@ -116,7 +115,7 @@ export async function POST(request: Request) {
     });
 
     const contentWords = new Set(
-      corrected
+      trimmed
         .toLowerCase()
         .replace(/[^a-z\s]/g, "")
         .split(/\s+/)
@@ -141,9 +140,10 @@ export async function POST(request: Request) {
     }
   }
 
+  // Save immediately with original text — user sees "planted" instantly
   const entry = await prisma.entry.create({
     data: {
-      content: corrected || (hasImages ? "📷" : ""),
+      content: trimmed || (hasImages ? "📷" : ""),
       category,
       tags: topics.join(","),
       localDate,
@@ -151,6 +151,18 @@ export async function POST(request: Request) {
       linkedEntryIds,
     },
   });
+
+  // Auto-correct in background — update entry if correction differs
+  if (trimmed) {
+    autoCorrect(trimmed).then((corrected) => {
+      if (corrected && corrected !== trimmed) {
+        prisma.entry.update({
+          where: { id: entry.id },
+          data: { content: corrected },
+        }).catch((err) => console.error("[autocorrect] update failed:", err));
+      }
+    }).catch((err) => console.error("[autocorrect] failed:", err));
+  }
 
   // Save images if provided (up to 3)
   if (imageFiles.length > 0) {
