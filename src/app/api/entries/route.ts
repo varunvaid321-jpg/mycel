@@ -4,6 +4,7 @@ import { classify } from "@/lib/classifier";
 import { autoCorrect } from "@/lib/ai";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
+import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
@@ -174,14 +175,18 @@ export async function POST(request: Request) {
       const savedPaths: string[] = [];
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const safeExt = ["jpg", "jpeg", "png", "webp", "gif", "heic"].includes(ext) ? ext : "jpg";
         const suffix = i === 0 ? "" : `_${i + 1}`;
-        const fileName = `${entry.id}${suffix}.${safeExt}`;
+        const fileName = `${entry.id}${suffix}.jpg`;
         const filePath = `${IMAGE_DIR}/${fileName}`;
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(filePath, buffer);
+        const raw = Buffer.from(await file.arrayBuffer());
+        // Compress: resize to max 2000px wide, convert to JPEG 80% quality
+        const compressed = await sharp(raw)
+          .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer();
+        console.log(`[upload] ${file.name}: ${(raw.length / 1024).toFixed(0)}KB → ${(compressed.length / 1024).toFixed(0)}KB`);
+        await writeFile(filePath, compressed);
         savedPaths.push(fileName);
       }
 
