@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       try {
         const raw = await readFile(filePath);
         const compressed = await sharp(raw)
+          .rotate() // Auto-fix EXIF orientation
           .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 80 })
           .toBuffer();
