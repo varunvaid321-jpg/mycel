@@ -139,9 +139,11 @@ export default function ScreenLock({ children }: ScreenLockProps) {
     }
   }
 
-  if (!locked) return <>{children}</>;
-
   return (
+    <>
+      {/* Always render children so React state (compose text) is preserved */}
+      <div className={locked ? "hidden" : ""}>{children}</div>
+      {locked && (
     <div className="fixed inset-0 bg-bg z-50 flex flex-col items-center justify-center">
       <div className="text-center px-6 w-full max-w-[300px]">
         <div className="text-5xl mb-4 opacity-40">&#x1F510;</div>
@@ -205,5 +207,7 @@ export default function ScreenLock({ children }: ScreenLockProps) {
         private by default
       </div>
     </div>
+      )}
+    </>
   );
 }
