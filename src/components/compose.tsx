@@ -62,9 +62,9 @@ export default function Compose({ onSaved }: ComposeProps) {
       return;
     }
 
-    // Max 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Image too large — max 10MB");
+    // Max 20MB (compressed on server)
+    if (file.size > 20 * 1024 * 1024) {
+      setError("Image too large — max 20MB");
       return;
     }
 
