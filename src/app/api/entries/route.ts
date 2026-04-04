@@ -182,6 +182,7 @@ export async function POST(request: Request) {
         const raw = Buffer.from(await file.arrayBuffer());
         // Compress: resize to max 2000px wide, convert to JPEG 80% quality
         const compressed = await sharp(raw)
+          .rotate() // Auto-fix EXIF orientation (phone camera rotation)
           .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 80 })
           .toBuffer();
