@@ -8,7 +8,11 @@ import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
-const IMAGE_DIR = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
+const IMAGE_DIR = process.env.MYCEL_DATA_DIR
+  ? `${process.env.MYCEL_DATA_DIR}/images`
+  : process.env.NODE_ENV === "production"
+    ? "/data/images"
+    : "./data/images";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
