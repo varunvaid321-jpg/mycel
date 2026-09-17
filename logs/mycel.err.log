@@ -1,7 +1,0 @@
-/Users/varunvaid/mycel/scripts/start-local.sh: line 10: exec: node: not found
-/Users/varunvaid/mycel/scripts/start-local.sh: line 10: exec: node: not found
-/Users/varunvaid/mycel/scripts/start-local.sh: line 10: exec: node: not found
-(node:34612) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:34667) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
-(Use `node --trace-deprecation ...` to show where the warning was created)

@@ -3,3 +3,8 @@ node_modules/
 prisma/dev.db
 prisma/dev.db-journal
 .env
+
+# Local runtime data — private journal DB and photos. NEVER commit (public repo).
+data/
+logs/
+mycel-backups/
