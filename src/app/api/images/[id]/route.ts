@@ -21,7 +21,11 @@ export async function GET(
 
   // Image files stored as /data/images/{id}.{ext}
   // Try common extensions
-  const baseDir = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
+  const baseDir = process.env.MYCEL_DATA_DIR
+    ? `${process.env.MYCEL_DATA_DIR}/images`
+    : process.env.NODE_ENV === "production"
+      ? "/data/images"
+      : "./data/images";
 
   for (const ext of Object.keys(MIME_TYPES)) {
     const filePath = `${baseDir}/${id}.${ext}`;

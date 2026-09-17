@@ -4,7 +4,11 @@ import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
-const IMAGE_DIR = process.env.NODE_ENV === "production" ? "/data/images" : "./data/images";
+const IMAGE_DIR = process.env.MYCEL_DATA_DIR
+  ? `${process.env.MYCEL_DATA_DIR}/images`
+  : process.env.NODE_ENV === "production"
+    ? "/data/images"
+    : "./data/images";
 const SECRET = process.env.MYCEL_PASSPHRASE;
 
 export async function POST(request: Request) {
